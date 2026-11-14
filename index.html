@@ -712,7 +712,7 @@ function route(){
   }else{document.body.classList.remove('inworld');cur='map';window.scrollTo(0,0)}
   Object.keys(frames).forEach(k=>{try{frames[k].contentWindow.postMessage({sq:'active',on:cur==='w'+k},'*')}catch(e){}});
   document.title=cur==='map'?'SurveyQuest · Course Map':'SurveyQuest · '+W[+cur.slice(1)-1].name;
-  renderMap();
+  applyMusic();renderMap();
 }
 window.addEventListener('hashchange',route);
 window.addEventListener('message',e=>{const d=e.data||{};
@@ -723,9 +723,32 @@ window.addEventListener('message',e=>{const d=e.data||{};
 window.addEventListener('storage',()=>{hud()});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b)location.hash='#'+b.dataset.go});
 window.addEventListener('resize',hud);
+/* ---------- shell theme music: plays on the welcome screen and the course map; each world has its own score ---------- */
+const mus=(function(){
+  let ctx=null,master=null,timer=null,nextT=0,step=0,playing=false;
+  const mtof=m=>440*Math.pow(2,(m-69)/12),BPM=92,E=60/BPM/2;
+  const CH=[[50,53,57,60],[46,50,53,57],[48,52,55,60],[45,48,52,57]],ROOT=[38,34,36,33],ARP=[0,1,2,3,2,1,2,1];     // Dm  Bb  C  Am
+  const SC=[62,64,65,67,69,71,72,74],MEL=[[4,-1,5,-1,6,-1,5,4],[3,-1,4,-1,5,-1,4,3],[2,-1,4,-1,5,-1,6,-1],[5,-1,4,-1,3,-1,2,-1]];
+  function net(){if(ctx)return ctx;try{ctx=new (window.AudioContext||window.webkitAudioContext)();master=ctx.createGain();master.gain.value=.5;master.connect(ctx.destination)}catch(e){ctx=null}return ctx}
+  function note(f,t,d,type,v){const o=ctx.createOscillator(),g=ctx.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(master);o.start(t);o.stop(t+d+.03)}
+  function sched(){while(nextT<ctx.currentTime+.3){const bar=Math.floor(step/8)%4,i=step%8,ch=CH[bar];
+    if(i%4===0)note(mtof(ROOT[bar]),nextT,E*3.4,'sine',.18);
+    note(mtof(ch[ARP[i]]+12),nextT,E*1.4,'triangle',.05);
+    if(i===0)ch.forEach(m=>note(mtof(m),nextT,E*7,'sine',.018));
+    const m=MEL[bar][i];if(m>=0&&step>=16)note(mtof(SC[m]+12),nextT,E*1.8,'triangle',.07);
+    nextT+=E;step++}}
+  return {start(){const c=net();if(!c)return;try{c.resume();if(playing)return;playing=true;nextT=c.currentTime+.1;step=0;timer=setInterval(sched,60)}catch(e){}},
+    stop(){if(!playing)return;playing=false;clearInterval(timer);try{ctx.suspend()}catch(e){}},
+    unlock(){const c=net();if(c&&c.state!=='running'&&playing)c.resume()},state:()=>({playing,ctx:ctx&&ctx.state})};
+})();
+let unlocked=false;
+function applyMusic(){(musicOn&&unlocked&&cur==='map')?mus.start():mus.stop()}
+['click','touchend','keydown'].forEach(ev=>document.addEventListener(ev,()=>{unlocked=true;applyMusic()},true));
+document.addEventListener('visibilitychange',()=>{if(!ctxAlive())return;if(document.hidden)mus.stop();else applyMusic()});
+function ctxAlive(){return true}
 /* ---------- theme + music (each world plays its own generated score; the shell keeps one on/off switch) ---------- */
 function applyTheme(skipSend){if(theme)document.documentElement.dataset.theme=theme;else delete document.documentElement.dataset.theme;if(!skipSend)sendAll({sq:'theme',t:theme})}
-function syncMusic(fromWorld){$('#musicBtn').setAttribute('aria-pressed',musicOn);if(!fromWorld)sendAll({sq:'musicState',on:musicOn});else Object.values(frames).forEach(f=>{try{f.contentWindow.postMessage({sq:'musicState',on:musicOn},'*')}catch(e){}})}
+function syncMusic(fromWorld){$('#musicBtn').setAttribute('aria-pressed',musicOn);applyMusic();if(!fromWorld)sendAll({sq:'musicState',on:musicOn});else Object.values(frames).forEach(f=>{try{f.contentWindow.postMessage({sq:'musicState',on:musicOn},'*')}catch(e){}})}
 $('#themeBtn').addEventListener('click',()=>{const dark=theme?theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;theme=dark?'light':'dark';try{localStorage.setItem('surveyquest-shell-theme',theme)}catch(e){}applyTheme()});
 $('#musicBtn').addEventListener('click',()=>{musicOn=!musicOn;try{localStorage.setItem('surveyquest-music',musicOn?'on':'off')}catch(e){}syncMusic()});
 /* ---------- reset all ---------- */
@@ -752,7 +775,7 @@ function welcome(){
   go.addEventListener('click',done);document.addEventListener('keydown',kd);
 }
 applyTheme(true);syncMusic(true);route();welcome();
-window.__sqShell={totals,W,readW};
+window.__sqShell={totals,W,readW,music:()=>mus.state()};
 })();
 
 </script>
