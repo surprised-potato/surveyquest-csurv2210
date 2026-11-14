@@ -436,6 +436,30 @@ pre{color:#f4e9cc}
 .wx-steps li{margin:.42rem 0;line-height:1.5}
 .wx-ans{margin-top:10px;padding:8px 12px;background:var(--paper2);border-left:5px solid var(--good);font-family:var(--f-mono);font-size:.95rem}
 @media (max-width:760px){.wx-grid{grid-template-columns:1fr}}
+/* stage navigation buttons */
+.stagenav{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:34px 0 8px}
+.stagenav .btn{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:62px;padding:10px 14px;text-align:left;text-decoration:none;line-height:1.25}
+.stagenav .btn small{font-family:var(--f-mono);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
+.stagenav .btn span{font-family:var(--f-disp);font-weight:600;font-size:1rem;overflow-wrap:anywhere}
+.stagenav .sn-next{align-items:flex-end;text-align:right;grid-column:2}
+.stagenav .sn-prev{grid-column:1}
+@media (max-width:420px){.stagenav{gap:8px}.stagenav .btn{padding:9px 10px}.stagenav .btn span{font-size:.92rem}}
+/* stage index: a compact dropdown on phones and tablets */
+.navtoggle{display:none}
+@media (max-width:960px){
+  .rail{padding:0;position:relative;z-index:30;margin-bottom:12px}
+  .navtoggle{display:flex;width:100%;align-items:center;justify-content:space-between;gap:10px;min-height:52px;padding:8px 14px;background:var(--paper);color:var(--ink);border:2px solid var(--line);font:inherit;font-family:var(--f-disp);font-weight:600;font-size:1.02rem;text-align:left;cursor:pointer}
+  .navtoggle .nowl{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .navtoggle .nowl b{font-family:var(--f-mono);font-size:.8rem;background:var(--ink);color:var(--paper);padding:1px 7px;margin-right:6px}
+  .navtoggle .car{transition:transform .2s}
+  .rail.open .navtoggle .car{transform:rotate(180deg)}
+  .rail .nav{position:absolute;left:0;right:0;top:100%;display:none;flex-direction:column;overflow:visible;max-height:min(70vh,520px);overflow-y:auto;background:var(--paper);border:2px solid var(--line);border-top:0;padding:6px;box-shadow:0 8px 18px rgba(0,0,0,.28)}
+  .rail.open .nav{display:flex}
+  .rail .nav a{flex:0 0 auto;white-space:normal;min-height:48px;display:flex;align-items:center;padding:8px 10px}
+  .rail .nav .div{display:block}
+  .rail .nav .soon{display:flex}
+}
+
 
 
 /* ---------- art-forward layout ---------- */
@@ -550,7 +574,7 @@ a.xcard:hover,a.xcard:focus-visible{transform:translateY(-4px);box-shadow:0 8px 
 </div></header>
 
 <div class="shell">
-  <aside class="rail" aria-label="Stage index"><h4>Stage index</h4><nav class="nav" id="nav"></nav></aside>
+  <aside class="rail" id="rail" aria-label="Stage index"><button type="button" class="navtoggle" id="navToggle" aria-expanded="false" aria-controls="nav"><span class="nowl" id="navNow">Stage index</span><span class="car" aria-hidden="true">▾</span></button><h4>Stage index</h4><nav class="nav" id="nav"></nav></aside>
   <main class="main" id="main"></main>
 </div>
 <div id="banner" aria-live="assertive"><div class="big" id="bnBig"></div><div class="small" id="bnSmall"></div></div>
@@ -1681,6 +1705,15 @@ function bossCard(mode){
   go.addEventListener('click',close);w.addEventListener('click',e=>{if(e.target===w)close()});document.addEventListener('keydown',kd);
   if(win)sfx.clear();
 }
+/* previous / next buttons at the bottom of every stage and the boss page (easier than the rail on a phone) */
+function stageNav(id){
+  const order=[{id:'home',t:'Route map'},...STAGES.map(x=>({id:x.id,t:`${x.no} ${x.title}`})),{id:'boss',t:`Boss: ${WORLD.boss.short}`}];
+  const i=order.findIndex(o=>o.id===id),pv=order[i-1],nx=order[i+1];
+  const nw=WORLD.next&&WORLD.next.href;
+  const left=pv?`<a class="btn sn-prev" href="#${pv.id}"><small>← Previous</small><span>${pv.t}</span></a>`:'<span></span>';
+  const right=nx?`<a class="btn primary sn-next" href="#${nx.id}"><small>Next →</small><span>${nx.t}</span></a>`:(nw?`<a class="btn primary sn-next" href="${WORLD.next.href}"><small>Next world →</small><span>${WORLD.next.name}</span></a>`:`<a class="btn sn-next" href="#home"><small>Done</small><span>Back to the route map</span></a>`);
+  return `<nav class="stagenav" aria-label="Stage navigation">${left}${right}</nav>`;
+}
 function build(){
   const main=$('#main'),B=WORLD.boss;
   const exBlock=id=>`<section class="sec"><h2><span class="no">Q</span>Checkpoints</h2><p class="prose">Answer each one. First-try answers earn full XP and extend your closed traverse.</p>${EX[id].map(exHTML).join('')}</section>`;
@@ -1692,12 +1725,12 @@ function build(){
    <section class="sec"><h2>How to play</h2><div class="how">${WORLD.how.map(h=>`<div>${h}</div>`).join('')}</div></section>
    <section class="sec"><h2>Badges</h2><div class="badges" id="badges"></div></section>
    <p class="foot">${WORLD.foot}</p></div>
-  ${STAGES.map(st=>`<div class="view" id="v-${st.id}">${stageHero(st)}${SEC[st.id]}${exBlock(st.id)}</div>`).join('')}
+  ${STAGES.map(st=>`<div class="view" id="v-${st.id}">${stageHero(st)}${SEC[st.id]}${exBlock(st.id)}${stageNav(st.id)}</div>`).join('')}
   <div class="view" id="v-boss">${heroHTML({eyebrow:B.eyebrow,title:B.short,lead:'Mission',mission:B.mission})}
    <div class="bossbar" id="bossbar"><div class="bossart">${withArt(WORLD.bossSVG(),ART.boss)}</div>
    <div class="bossinfo"><div class="bn">${B.title}</div><p class="taunt">“${B.taunt}”</p><div class="hp"><i id="hpFill"></i></div><div class="mono hint" id="hpTxt" style="color:#d6c9a8;margin-top:4px"></div></div></div>
    <div id="bossLock" class="lockbox" hidden><h3>${B.lockTitle}</h3><p id="lockTxt"></p></div>
-   <div id="bossBody">${SEC.boss}<section class="sec"><h2><span class="no">Q</span>Problems</h2>${EX.boss.map(exHTML).join('')}</section></div></div>`;
+   <div id="bossBody">${SEC.boss}<section class="sec"><h2><span class="no">Q</span>Problems</h2>${EX.boss.map(exHTML).join('')}</section></div>${stageNav('boss')}</div>`;
   const wl=(w,tag,lab)=>w?(w.href?`<a href="${w.href}"><span class="sn">${tag}</span><span class="nt">${w.name}<br><span class="hint">${lab}</span></span></a>`:`<a class="soon" href="#home" aria-disabled="true" tabindex="-1"><span class="sn">${tag}</span><span class="nt">${w.name}<br><span class="hint">coming next</span></span></a>`):'';
   $('#nav').innerHTML=`<a href="#home" data-v="home"><span class="sn">HOME</span><span class="nt">Route map</span></a><div class="div"></div>`+
     STAGES.map(s=>`<a href="#${s.id}" data-v="${s.id}"><span class="sn">${s.no}</span><span class="nt">${s.title}<br><span class="st" id="ns-${s.id}"></span></span></a>`).join('')+
@@ -1883,10 +1916,23 @@ $('#resetBtn').addEventListener('click',e=>{
   clearTimeout(armT);b.classList.remove('armed');b.textContent='Reset';
   const keep={sfx:S.sfx,theme:S.theme};S=Object.assign(fresh(),keep);save();build();route();toast('Progress reset','Back to Rodman');
 });
+function syncNavLabel(){const a=$('.nav a.on'),l=$('#navNow');if(!l)return;
+  if(!a){l.textContent='Stage index';return}
+  const tag=a.querySelector('.sn').textContent,t=a.querySelector('.nt').childNodes[0].textContent;
+  l.innerHTML='<b>'+tag+'</b> '+t}
+function closeNav(){const r=$('#rail'),b=$('#navToggle');if(r){r.classList.remove('open');if(b)b.setAttribute('aria-expanded','false')}}
+(function(){const b=$('#navToggle');if(!b)return;
+  b.addEventListener('click',()=>{const r=$('#rail'),o=!r.classList.contains('open');r.classList.toggle('open',o);b.setAttribute('aria-expanded',o);
+    if(o){const on=$('.nav a.on');if(on)setTimeout(()=>on.scrollIntoView({block:'nearest'}),0)}});
+  document.addEventListener('click',e=>{if(!e.target.closest('#rail'))closeNav()});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeNav()});
+  $('#nav').addEventListener('click',e=>{if(e.target.closest('a'))closeNav()});
+})();
 function route(){
   let h=(location.hash||'#home').slice(1);if(!['home','boss',...stageIds].includes(h))h='home';
   $$('.view').forEach(v=>v.classList.toggle('on',v.id==='v-'+h));
   $$('.nav a[data-v]').forEach(a=>a.classList.toggle('on',a.dataset.v===h));
+  syncNavLabel();closeNav();
   window.scrollTo(0,0);
   if(h==='boss'&&gateInfo().open&&!S.bossSeen&&!$('#sqWelcome')){S.bossSeen=true;save();bossCard('intro')}
 }

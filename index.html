@@ -392,6 +392,30 @@ svg.plot text{fill:var(--ink);font-family:var(--f-mono);font-size:12px}
 pre{color:#f4e9cc}
 .cm{color:#c9b184}
 .hp{border-color:rgba(255,246,220,.45)}
+/* stage navigation buttons */
+.stagenav{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:34px 0 8px}
+.stagenav .btn{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:62px;padding:10px 14px;text-align:left;text-decoration:none;line-height:1.25}
+.stagenav .btn small{font-family:var(--f-mono);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
+.stagenav .btn span{font-family:var(--f-disp);font-weight:600;font-size:1rem;overflow-wrap:anywhere}
+.stagenav .sn-next{align-items:flex-end;text-align:right;grid-column:2}
+.stagenav .sn-prev{grid-column:1}
+@media (max-width:420px){.stagenav{gap:8px}.stagenav .btn{padding:9px 10px}.stagenav .btn span{font-size:.92rem}}
+/* stage index: a compact dropdown on phones and tablets */
+.navtoggle{display:none}
+@media (max-width:960px){
+  .rail{padding:0;position:relative;z-index:30;margin-bottom:12px}
+  .navtoggle{display:flex;width:100%;align-items:center;justify-content:space-between;gap:10px;min-height:52px;padding:8px 14px;background:var(--paper);color:var(--ink);border:2px solid var(--line);font:inherit;font-family:var(--f-disp);font-weight:600;font-size:1.02rem;text-align:left;cursor:pointer}
+  .navtoggle .nowl{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .navtoggle .nowl b{font-family:var(--f-mono);font-size:.8rem;background:var(--ink);color:var(--paper);padding:1px 7px;margin-right:6px}
+  .navtoggle .car{transition:transform .2s}
+  .rail.open .navtoggle .car{transform:rotate(180deg)}
+  .rail .nav{position:absolute;left:0;right:0;top:100%;display:none;flex-direction:column;overflow:visible;max-height:min(70vh,520px);overflow-y:auto;background:var(--paper);border:2px solid var(--line);border-top:0;padding:6px;box-shadow:0 8px 18px rgba(0,0,0,.28)}
+  .rail.open .nav{display:flex}
+  .rail .nav a{flex:0 0 auto;white-space:normal;min-height:48px;display:flex;align-items:center;padding:8px 10px}
+  .rail .nav .div{display:block}
+  .rail .nav .soon{display:flex}
+}
+
 
 
 /* ---------- art-forward layout ---------- */
