@@ -84,6 +84,16 @@ body.pres #deck{inset:0}
 [data-s]{transition:opacity .55s ease}
 g.rvn,path.rvn,rect.rvn{filter:drop-shadow(0 0 5px var(--good))}
 tr.rvn td{background:color-mix(in srgb,var(--accent) 24%,transparent)}
+.work div .fm{display:block;color:var(--muted)}
+.work div .sb{opacity:1;transition:opacity .4s ease .5s;margin-right:.4em}
+.work div .rs{opacity:1;transition:opacity .4s ease 1s;font-weight:bold}
+.work div.hid .sb,.work div.hid .rs{opacity:0}
+.work div+div{margin-top:5px}
+.work.cols{column-count:2;column-gap:26px}
+.work.cols>div{break-inside:avoid}
+.out.wide{grid-template-columns:1.55fr 1fr}
+@media (max-width:900px){.work.cols{column-count:1}.out.wide{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){.work div .sb,.work div .rs{transition:none}}
 .stmt{border-left:6px solid var(--accent);background:var(--paper2);padding:8px 14px;margin:8px 0;font-size:1.05rem}
 .stmt div+div{margin-top:4px}
 .stmt b{font-family:ui-monospace,Consolas,monospace;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-right:6px}
@@ -117,6 +127,8 @@ tr.rvn td{background:color-mix(in srgb,var(--accent) 24%,transparent)}
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const D2R=Math.PI/180;
 const f=(x,n=2)=>(+x).toFixed(n);
+/* one worked line: the formula first, then the substitution, then the result */
+const ln=(fm,sb,rs)=>`<div><span class="fm">${fm}</span>${sb!=null?`<span class="sb">= ${sb}</span>`:''}<span class="rs">${sb!=null?'= ':''}${rs}</span></div>`;
 function stn(m){const k=Math.floor(m/1000+1e-9),r=m-k*1000;return k+'+'+(r<10?'00':r<100?'0':'')+r.toFixed(2)}
 function dms(deg){let s=Math.round(deg*3600);const d=Math.floor(s/3600);s-=d*3600;const m=Math.floor(s/60);s-=m*60;return d+'°'+String(m).padStart(2,'0')+'′'+String(s).padStart(2,'0')+'″'}
 
@@ -147,7 +159,7 @@ function problem(host,spec){
   host.classList.add('prob');
   host.innerHTML=`<span class="tag">${spec.tag}</span> <b>${spec.title}</b><div class="stmt"><div><b>Given</b> ${spec.given}</div><div><b>Find</b> ${spec.find}</div></div>
   <div class="ctl">${spec.inputs.map(x=>`<div><label for="${spec.id}-${x.k}">${x.label}<b id="${spec.id}-${x.k}-v"></b></label><input type="range" id="${spec.id}-${x.k}" min="${x.min}" max="${x.max}" step="${x.step}" value="${x.v}"></div>`).join('')}</div>
-  <div class="out"><div><p class="hint" id="${spec.id}-h">The solution is hidden. Press ▶ Play steps to watch it unfold, or Next step › to reveal one line at a time. Change the given values first if you like.</p><div class="work" id="${spec.id}-w"></div><div class="ans" id="${spec.id}-a"></div></div><div id="${spec.id}-f"></div></div>
+  <div class="out${spec.cols?' wide':''}"><div><p class="hint" id="${spec.id}-h">The solution is hidden. Press ▶ Play steps to watch it unfold, or Next step › to reveal one line at a time. Change the given values first if you like.</p><div class="work${spec.cols?' cols':''}" id="${spec.id}-w"></div><div class="ans" id="${spec.id}-a"></div></div><div id="${spec.id}-f"></div></div>
   <p class="steps"><button type="button" class="btn pri" id="${spec.id}-p">▶ Play steps</button><button type="button" class="btn" id="${spec.id}-n">Next step ›</button><button type="button" class="btn" id="${spec.id}-r">Reset to lab values</button><span class="cnt" id="${spec.id}-c"></span></p>`;
   let shown=0,timer=null; /* shown = number of working lines revealed; 0 = solution hidden, null = everything */
   const W=()=>$('#'+spec.id+'-w'),A=()=>$('#'+spec.id+'-a'),F=()=>$('#'+spec.id+'-f');
@@ -160,7 +172,7 @@ function problem(host,spec){
     if(done&&flash){A().classList.remove('pop');void A().offsetWidth;A().classList.add('pop')}};
   const stop=()=>{clearTimeout(timer);timer=null};
   const play=()=>{stop();shown=0;paint();if(calm){shown=null;paint(true);return}
-    const tick=()=>{const L=W().children.length;shown++;paint(true);if(shown<=L)timer=setTimeout(tick,shown===L?600:560);else{shown=null;paint(false)}};timer=setTimeout(tick,350)};
+    const tick=()=>{const L=W().children.length;shown++;paint(true);if(shown<=L)timer=setTimeout(tick,shown===L?900:1900);else{shown=null;paint(false)}};timer=setTimeout(tick,350)};
   const next=()=>{stop();const L=W().children.length;if(shown===null)shown=0;shown++;if(shown>L){shown=null}paint(true)};
   host.addEventListener('enter',()=>{stop();shown=0;paint(false)}); /* every visit starts with the solution hidden; Play steps is manual */
   const upd=()=>{spec.inputs.forEach(x=>{vals[x.k]=+$('#'+spec.id+'-'+x.k).value;$('#'+spec.id+'-'+x.k+'-v').textContent=f(vals[x.k],x.dp??(x.step<1?2:0))+(x.unit?' '+x.unit:'')});
@@ -509,7 +521,7 @@ S(`<div class="in"><div class="kick">Part A · Problem 1 of 5</div><h2>The two a
    given:'A compound curve has R₁ = 300 m, I₁ = 30°, R₂ = 200 m and I₂ = 40°.',find:'T, L<sub>c</sub> and LC for each arc, and the total length L.',
    inputs:[{k:'R1',label:'R₁',min:100,max:600,step:10,v:300,unit:'m'},{k:'I1',label:'I₁',min:10,max:80,step:1,v:30,unit:'°'},{k:'R2',label:'R₂',min:100,max:600,step:10,v:200,unit:'m'},{k:'I2',label:'I₂',min:10,max:80,step:1,v:40,unit:'°'}],
    render:v=>{const a=CALC.arc(v.R1,v.I1),b=CALC.arc(v.R2,v.I2);
-    return{work:`<div><b>Arc 1</b></div><div>T₁ = ${v.R1} tan(${v.I1}°/2) = ${f(a.t)} m</div><div>L₁ = ${v.R1}(${v.I1}° × π/180) = ${f(a.L)} m</div><div>LC₁ = 2(${v.R1}) sin(${v.I1}°/2) = ${f(a.LC)} m</div><div style="margin-top:6px"><b>Arc 2</b></div><div>T₂ = ${v.R2} tan(${v.I2}°/2) = ${f(b.t)} m</div><div>L₂ = ${v.R2}(${v.I2}° × π/180) = ${f(b.L)} m</div><div>LC₂ = 2(${v.R2}) sin(${v.I2}°/2) = ${f(b.LC)} m</div>`,
+    return{work:`<div><b>Arc 1</b></div>${ln('T₁ = R₁ tan(I₁/2)',`${v.R1} tan(${v.I1}°/2)`,f(a.t)+' m')}${ln('L₁ = R₁ I₁ (π/180)',`${v.R1}(${v.I1}° × π/180)`,f(a.L)+' m')}${ln('LC₁ = 2R₁ sin(I₁/2)',`2(${v.R1}) sin(${v.I1}°/2)`,f(a.LC)+' m')}<div style="margin-top:6px"><b>Arc 2</b></div>${ln('T₂ = R₂ tan(I₂/2)',`${v.R2} tan(${v.I2}°/2)`,f(b.t)+' m')}${ln('L₂ = R₂ I₂ (π/180)',`${v.R2}(${v.I2}° × π/180)`,f(b.L)+' m')}${ln('LC₂ = 2R₂ sin(I₂/2)',`2(${v.R2}) sin(${v.I2}°/2)`,f(b.LC)+' m')}`,
      ans:`<div>L = L₁ + L₂ = ${f(a.L)} + ${f(b.L)}</div><div><b>L = ${f(a.L+b.L)} m</b> · I = ${v.I1+v.I2}°</div>`,fig:compoundSVG(v.R1,v.I1,v.R2,v.I2,null,{T1:2,L1:3,LC1:4,T2:6,L2:7,LC2:8})}}});
 });
 
@@ -518,7 +530,7 @@ S(`<div class="in"><div class="kick">Part A · Problem 2 of 5</div><h2>Stationin
    given:'The PC is at station 1+200.00. The arcs are those of Problem 1: R₁ = 300 m, I₁ = 30°, R₂ = 200 m, I₂ = 40°.',find:'The stations of the PCC and the PT. Then change the PC station or an arc and watch them move.',
    inputs:[{k:'pc',label:'PC station (m)',min:800,max:2400,step:10,v:1200,unit:'m',dp:0},{k:'R1',label:'R₁',min:100,max:600,step:10,v:300,unit:'m'},{k:'I1',label:'I₁',min:10,max:80,step:1,v:30,unit:'°'},{k:'R2',label:'R₂',min:100,max:600,step:10,v:200,unit:'m'},{k:'I2',label:'I₂',min:10,max:80,step:1,v:40,unit:'°'}],
    render:v=>{const a=CALC.arc(v.R1,v.I1),b=CALC.arc(v.R2,v.I2),pcc=v.pc+a.L,pt=pcc+b.L;
-    return{work:`<div>PC = ${stn(v.pc)}</div><div>L₁ = ${f(a.L)} m</div><div>PCC = PC + L₁ = ${f(v.pc)} + ${f(a.L)} = ${stn(pcc)}</div><div>L₂ = ${f(b.L)} m</div><div>PT = PCC + L₂ = ${f(pcc)} + ${f(b.L)}</div>`,
+    return{work:`${ln('Sta. PC (given)',null,stn(v.pc))}${ln('L₁ = R₁ I₁ (π/180)',`${v.R1}(${v.I1}° × π/180)`,f(a.L)+' m')}${ln('Sta. PCC = Sta. PC + L₁',`${f(v.pc)} + ${f(a.L)}`,stn(pcc))}${ln('L₂ = R₂ I₂ (π/180)',`${v.R2}(${v.I2}° × π/180)`,f(b.L)+' m')}${ln('Sta. PT = Sta. PCC + L₂',`${f(pcc)} + ${f(b.L)}`,stn(pt))}`,
      ans:`<div>PCC = <b>${stn(pcc)}</b></div><div>PT = <b>${stn(pt)}</b></div>`,
      fig:`<div class="card"><table><tr><th>Point</th><th>Station</th><th>Chainage (m)</th></tr><tr data-s="1"><td>PC</td><td>${stn(v.pc)}</td><td>${f(v.pc)}</td></tr><tr data-s="3"><td>PCC</td><td>${stn(pcc)}</td><td>${f(pcc)}</td></tr><tr data-s="5"><td>PT</td><td>${stn(pt)}</td><td>${f(pt)}</td></tr></table><p class="note" style="margin:8px 0 0">Station 1+200.00 means 1 km + 200.00 m = 1200.00 m.</p></div>`}}});
 });
@@ -532,7 +544,7 @@ S(`<div class="in"><div class="kick">Part A · Problem 3 of 5</div><h2>Staking o
     const row=(r,n,p)=>`<tr><td>${stn(r.sta)}</td><td>${p}</td><td>${dms(r.defl)}</td><td>${r.d?f(r.chord,3):'-'}</td></tr>`;
     const tab=(t,s,e)=>t.map((r,i)=>row(r,i,i===0?s:i===t.length-1?e:'')).join('');
     const l1=t1[t1.length-1],l2=t2[t2.length-1];
-    return{work:`<div>δ = (arc length from the start) / 2R, in radians</div><div>chord = 2R sin(Δl / 2R), from the last stake</div><div>Arc 1: last deflection = ${dms(l1.defl)} = I₁/2 = ${I1/2}° ✓</div><div>Arc 2: last deflection = ${dms(l2.defl)} = I₂/2 = ${I2/2}° ✓</div><div>The two arcs are staked from different set-ups (PC, then PCC).</div>`,
+    return{work:`${ln('δ = l / 2R  (l = arc length from the start of the arc, in radians)',`${f(t1[1].sta-pc)} / 2(${v.R1})  [first stake of arc 1]`,dms(t1[1].defl))}${ln('chord = 2R sin(Δl / 2R)  (from the previous stake)',`2(${v.R1}) sin(${f(t1[1].sta-pc)} / 2(${v.R1}))`,f(t1[1].chord,3)+' m')}${ln('Arc 1: last deflection = I₁/2',dms(l1.defl),`${I1/2}° ✓`)}${ln('Arc 2: last deflection = I₂/2',dms(l2.defl),`${I2/2}° ✓`)}<div>The two arcs are staked from different set-ups (PC, then PCC).</div>`,
      ans:`<div>Arc 1: ${t1.length-1} chords from the PC</div><div>Arc 2: ${t2.length-1} chords from the PCC</div><div>(I₁ = 30°, I₂ = 40°)</div>`,
      fig:`<div class="tablewrap"><table><tr><th>Station</th><th>Point</th><th>Deflection</th><th>Chord (m)</th></tr>${tab(t1,'PC','PCC')}<tr><th colspan="4">Set up at the PCC</th></tr>${tab(t2,'PCC','PT')}</table></div>`}}});
 });
@@ -543,7 +555,7 @@ S(`<div class="in"><div class="kick">Part A · Problem 4 of 5</div><h2>What if R
    inputs:[{k:'R2',label:'R₂',min:100,max:500,step:10,v:200,unit:'m'},{k:'I2',label:'I₂',min:10,max:80,step:1,v:40,unit:'°'}],
    render:v=>{const a=CALC.arc(300,30),b=CALC.arc(v.R2,v.I2),pcc=1200+a.L,pt=pcc+b.L;
     const xs=[],ys=[];for(let r=100;r<=500;r+=20){xs.push(r);ys.push(a.L+CALC.arc(r,v.I2).L)}
-    return{work:`<div>L₂ = R₂ I₂ = ${v.R2}(${v.I2}° × π/180) = ${f(b.L)} m</div><div>PT = PCC + L₂ = ${f(pcc)} + ${f(b.L)}</div><div>Doubling R₂ doubles L₂, because L = R I.</div>`,
+    return{work:`${ln('L₂ = R₂ I₂ (π/180)',`${v.R2}(${v.I2}° × π/180)`,f(b.L)+' m')}${ln('Sta. PT = Sta. PCC + L₂',`${f(pcc)} + ${f(b.L)}`,stn(pt))}<div>Doubling R₂ doubles L₂, because L = R I.</div>`,
      ans:`<div>L₂ = <b>${f(b.L)} m</b></div><div>PT = <b>${stn(pt)}</b></div><div>Total L = <b>${f(a.L+b.L)} m</b></div>`,
      fig:lineChart(xs,ys,v.R2,a.L+b.L,'R₂ (m)','Total L (m)',[0,900],xs.map(r=>a.L+CALC.arc(r,40).L))}}});
 });
@@ -566,30 +578,30 @@ S(`<div class="in"><div class="kick">Part A · Compound curves from the tangents
    given:'The common tangent T₁ + T₂ and the angles I₁ and I₂.',find:'I, θ, V₁ and V₂.',
    inputs:[{k:'tc',label:'T₁ + T₂',min:100,max:400,step:0.1,v:180.4,unit:'m',dp:1},{k:'I1',label:'I₁',min:10,max:40,step:1,v:31,unit:'°'},{k:'I2',label:'I₂',min:10,max:40,step:1,v:36,unit:'°'}],
    render:v=>{const I=v.I1+v.I2,th=180-I,rd=Math.PI/180,V1=v.tc*Math.sin(v.I2*rd)/Math.sin(th*rd),V2=v.tc*Math.sin(v.I1*rd)/Math.sin(th*rd);
-    return{work:`<div>I = I₁ + I₂ = ${v.I1}° + ${v.I2}° = ${I}°</div><div>θ = 180° − I = ${th}°</div><div>V₁ = (T₁+T₂) sin I₂ / sin θ = ${v.tc} sin ${v.I2}° / sin ${th}° = ${f(V1)} m</div><div>V₂ = (T₁+T₂) sin I₁ / sin θ = ${v.tc} sin ${v.I1}° / sin ${th}° = ${f(V2)} m</div>`,
+    return{work:`${ln('I = I₁ + I₂',`${v.I1}° + ${v.I2}°`,I+'°')}${ln('θ = 180° − I',`180° − ${I}°`,th+'°')}${ln('V₁ = (T₁+T₂) sin I₂ / sin θ',`${v.tc} sin ${v.I2}° / sin ${th}°`,f(V1)+' m')}${ln('V₂ = (T₁+T₂) sin I₁ / sin θ',`${v.tc} sin ${v.I1}° / sin ${th}°`,f(V2)+' m')}`,
      ans:`<div>I = <b>${I}°</b> · θ = ${th}°</div><div>V₁ = <b>${f(V1)} m</b></div><div>V₂ = <b>${f(V2)} m</b></div>`,fig:triSVG(v.I1,v.I2,v.tc)}}});
 });
 
 S(`<div class="in"><div class="kick">Part A · Problem 5 of 5</div><h2>Compound curve from the tangents</h2><div id="pA5"></div></div>`,()=>{
-  problem($('#pA5'),{id:'a5',tag:'Interactive',title:'Illustrative problem: compute R, T, V, L_L and the stations',
+  problem($('#pA5'),{id:'a5',cols:true,tag:'Interactive',title:'Illustrative problem: compute R, T, V, L_L and the stations',
    given:'Two tangents intersect at station 2+550. A compound curve laid on them has I₁ = 31°, I₂ = 36°, D₁ = 3° and D₂ = 5° (degree of curve on the 20 m arc basis, R = 1145.916 / D).',find:'R₁, R₂, I, T₁, T₂, V₁, V₂, L_L, and the stations of the PC, PCC and PT.',
    inputs:[{k:'pi',label:'Sta. PI (m)',min:1000,max:5000,step:10,v:2550,unit:'m',dp:0},{k:'I1',label:'I₁',min:10,max:40,step:1,v:31,unit:'°'},{k:'I2',label:'I₂',min:10,max:40,step:1,v:36,unit:'°'},{k:'D1',label:'D₁',min:1,max:10,step:0.5,v:3,unit:'°',dp:1},{k:'D2',label:'D₂',min:1,max:10,step:0.5,v:5,unit:'°',dp:1}],
    render:v=>{const c=CALC.tan3(v.pi,v.I1,v.I2,v.D1,v.D2),d=(x)=>f(x,2);
-    const w=[`<div>R₁ = 1145.916 / D₁ = 1145.916 / ${f(v.D1,1)} = ${d(c.R1)} m</div>`,
-     `<div>R₂ = 1145.916 / D₂ = 1145.916 / ${f(v.D2,1)} = ${d(c.R2)} m</div>`,
-     `<div>I = I₁ + I₂ = ${v.I1}° + ${v.I2}° = ${c.I}°,  θ = 180° − I = ${c.th}°</div>`,
-     `<div>T₁ = R₁ tan(I₁/2) = ${d(c.R1)} tan(${v.I1/2}°) = ${d(c.T1)} m</div>`,
-     `<div>T₂ = R₂ tan(I₂/2) = ${d(c.R2)} tan(${v.I2/2}°) = ${d(c.T2)} m</div>`,
-     `<div>V₁ = (T₁+T₂) sin I₂ / sin θ = ${d(c.T1+c.T2)} sin ${v.I2}° / sin ${c.th}° = ${d(c.V1)} m</div>`,
-     `<div>V₂ = (T₁+T₂) sin I₁ / sin θ = ${d(c.T1+c.T2)} sin ${v.I1}° / sin ${c.th}° = ${d(c.V2)} m</div>`,
-     `<div>T₁+V₁ = ${d(c.a)} m,  T₂+V₂ = ${d(c.b)} m</div>`,
-     `<div>L_L = √[(${d(c.a)})² + (${d(c.b)})² − 2(${d(c.a)})(${d(c.b)}) cos ${c.th}°] = ${d(c.LL)} m</div>`,
-     `<div>β = sin⁻¹[(T₂+V₂) sin θ / L_L] = ${d(c.beta)}°,  φ = sin⁻¹[(T₁+V₁) sin θ / L_L] = ${d(c.phi)}°, β + φ = ${d(c.beta+c.phi)}° = I ✓</div>`,
-     `<div>S꜀₁ = R₁ I₁ π/180 = ${d(c.R1)}(${v.I1}° × π/180) = ${d(c.S1)} m</div>`,
-     `<div>S꜀₂ = R₂ I₂ π/180 = ${d(c.R2)}(${v.I2}° × π/180) = ${d(c.S2)} m</div>`,
-     `<div>Sta. PC = Sta. PI − (T₁+V₁) = ${stn(v.pi)} − ${d(c.a)} = ${stn(c.pc)}</div>`,
-     `<div>Sta. PCC = Sta. PC + S꜀₁ = ${stn(c.pc)} + ${d(c.S1)} = ${stn(c.pcc)}</div>`,
-     `<div>Sta. PT = Sta. PCC + S꜀₂ = ${stn(c.pcc)} + ${d(c.S2)} = ${stn(c.pt)}</div>`];
+    const w=[ln('R₁ = 1145.916 / D₁',`1145.916 / ${f(v.D1,1)}`,d(c.R1)+' m'),
+     ln('R₂ = 1145.916 / D₂',`1145.916 / ${f(v.D2,1)}`,d(c.R2)+' m'),
+     ln('I = I₁ + I₂ ,  θ = 180° − I',`${v.I1}° + ${v.I2}° ,  180° − ${c.I}°`,`${c.I}° ,  ${c.th}°`),
+     ln('T₁ = R₁ tan(I₁/2)',`${d(c.R1)} tan(${v.I1/2}°)`,d(c.T1)+' m'),
+     ln('T₂ = R₂ tan(I₂/2)',`${d(c.R2)} tan(${v.I2/2}°)`,d(c.T2)+' m'),
+     ln('V₁ = (T₁+T₂) sin I₂ / sin θ',`${d(c.T1+c.T2)} sin ${v.I2}° / sin ${c.th}°`,d(c.V1)+' m'),
+     ln('V₂ = (T₁+T₂) sin I₁ / sin θ',`${d(c.T1+c.T2)} sin ${v.I1}° / sin ${c.th}°`,d(c.V2)+' m'),
+     ln('T₁+V₁ ,  T₂+V₂',`${d(c.T1)} + ${d(c.V1)} ,  ${d(c.T2)} + ${d(c.V2)}`,`${d(c.a)} m ,  ${d(c.b)} m`),
+     ln('L_L = √[(T₁+V₁)² + (T₂+V₂)² − 2(T₁+V₁)(T₂+V₂) cos θ]',`√[(${d(c.a)})² + (${d(c.b)})² − 2(${d(c.a)})(${d(c.b)}) cos ${c.th}°]`,d(c.LL)+' m'),
+     ln('β = sin⁻¹[(T₂+V₂) sin θ / L_L] ,  φ = sin⁻¹[(T₁+V₁) sin θ / L_L]',`sin⁻¹[${d(c.b)} sin ${c.th}° / ${d(c.LL)}] ,  sin⁻¹[${d(c.a)} sin ${c.th}° / ${d(c.LL)}]`,`${d(c.beta)}° ,  ${d(c.phi)}°  (β + φ = ${d(c.beta+c.phi)}° = I ✓)`),
+     ln('S꜀₁ = R₁ I₁ (π/180)',`${d(c.R1)}(${v.I1}° × π/180)`,d(c.S1)+' m'),
+     ln('S꜀₂ = R₂ I₂ (π/180)',`${d(c.R2)}(${v.I2}° × π/180)`,d(c.S2)+' m'),
+     ln('Sta. PC = Sta. PI − (T₁+V₁)',`${stn(v.pi)} − ${d(c.a)}`,stn(c.pc)),
+     ln('Sta. PCC = Sta. PC + S꜀₁',`${stn(c.pc)} + ${d(c.S1)}`,stn(c.pcc)),
+     ln('Sta. PT = Sta. PCC + S꜀₂',`${stn(c.pcc)} + ${d(c.S2)}`,stn(c.pt))];
     return{work:w.join(''),
      ans:`<div>R₁ = <b>${d(c.R1)} m</b> · R₂ = <b>${d(c.R2)} m</b> · I = <b>${c.I}°</b></div><div>T₁ = ${d(c.T1)} · T₂ = ${d(c.T2)} · V₁ = ${d(c.V1)} · V₂ = ${d(c.V2)} m</div><div>L_L = <b>${d(c.LL)} m</b></div><div>PC <b>${stn(c.pc)}</b> · PCC <b>${stn(c.pcc)}</b> · PT <b>${stn(c.pt)}</b></div>`,
      fig:compoundSVG(c.R1,v.I1,c.R2,v.I2,null,{noghost:1,sc:1,T1:4,T2:5,V1:6,V2:7,PI:8,LL:9,L1:11,L2:12,PC:13,PCC:14,PT:15,stn:{PC:stn(c.pc),PCC:stn(c.pcc),PT:stn(c.pt)}})}}});
@@ -610,7 +622,7 @@ S(`<div class="in"><div class="kick">Part B · Problem 1 of 3</div><h2>Fathoms t
    given:'A sounding reads 12 fathoms (1 fathom = 6 ft, 1 ft = 0.3048 m).',find:'The depth in feet and in metres. Change the reading to try others.',
    inputs:[{k:'fm',label:'Sounding',min:0.5,max:60,step:0.5,v:12,unit:'fathoms',dp:1}],
    render:v=>{const r=CALC.fathom(v.fm);
-    return{work:`<div>ft = ${f(v.fm,1)} × 6 = ${f(r.ft,1)} ft</div><div>m = ${f(r.ft,1)} × 0.3048 = ${f(r.m,3)} m</div><div>1 fathom = 1.8288 m</div>`,
+    return{work:`${ln('ft = fathoms × 6',`${f(v.fm,1)} × 6`,f(r.ft,1)+' ft')}${ln('m = ft × 0.3048',`${f(r.ft,1)} × 0.3048`,f(r.m,3)+' m')}${ln('1 fathom = 6 ft × 0.3048 m/ft',null,'1.8288 m')}`,
      ans:`<div><b>${f(v.fm,1)} fathoms = ${f(r.ft,1)} ft = ${f(r.m,2)} m</b></div>`,
      fig:`<svg class="plot" viewBox="0 0 400 200" role="img" aria-label="Depth bar of ${f(r.m,1)} metres"><rect x="40" y="20" width="120" height="${Math.min(170,r.m/110*170)}" fill="var(--c1)" opacity=".5" stroke="var(--c1)"/><text x="170" y="${20+Math.min(170,r.m/110*170)/2}" font-size="13">${f(r.m,1)} m</text><text x="40" y="14" font-size="11">surface</text></svg>`}}});
 });
@@ -628,7 +640,7 @@ S(`<div class="in"><div class="kick">Part B · Problem 2 of 3</div><h2>The cross
    after:()=>{B3&&B3.upd()},
    render:v=>{const d=[0,1,2,3,4,5].map(k=>v['d'+k]);Object.assign(HY,{d,a:v.a,i:v.i});
     const r=CALC.stream(d,HY.v,v.a,v.i);
-    const w=r.A.map((A,k)=>{const l=r.l[k];return`<div>A<sub>${NAMES[k]}</sub> = ${k===0?`½(${l})(${f(d[0],1)})`:k===6?`½(${l})(${f(d[5],1)})`:`½(${l})(${f(d[k-1],1)} + ${f(d[k],1)})`} = ${f(A)} m²</div>`}).join('');
+    const w=r.A.map((A,k)=>{const l=r.l[k],n=NAMES[k];return k===0?ln(`A<sub>${n}</sub> = ½ l d₁`,`½(${l})(${f(d[0],1)})`,f(A)+' m²'):k===6?ln(`A<sub>${n}</sub> = ½ l d₆`,`½(${l})(${f(d[5],1)})`,f(A)+' m²'):ln(`A<sub>${n}</sub> = ½ l (d<sub>${k}</sub> + d<sub>${k+1}</sub>)`,`½(${l})(${f(d[k-1],1)} + ${f(d[k],1)})`,f(A)+' m²')}).join('');
     return{work:w,ans:`<div>A = ΣA = <b>${f(r.At)} m²</b></div><div>Width = ${r.W} m</div>`,fig:crossSection(d,r.l,r.W,r.A)}}});
 });
 
@@ -638,7 +650,7 @@ S(`<div class="in"><div class="kick">Part B · Problem 3 of 3</div><h2>Discharge
    inputs:HY.v.map((x,k)=>({k:'v'+k,label:'v'+NAMES[k],min:0,max:3.5,step:0.05,v:x,unit:'m/s',dp:2})),
    render:v=>{const vv=[0,1,2,3,4,5,6].map(k=>v['v'+k]);
     const r=CALC.stream(HY.d,vv,HY.a,HY.i);
-    const w=r.q.map((q,k)=>`<div>q<sub>${NAMES[k]}</sub> = ${f(r.A[k])} × ${f(vv[k],2)} = ${f(q)} m³/s</div>`).join('');
+    const w=r.q.map((q,k)=>ln(`q<sub>${NAMES[k]}</sub> = A<sub>${NAMES[k]}</sub> v<sub>${NAMES[k]}</sub>`,`${f(r.A[k])} × ${f(vv[k],2)}`,f(q)+' m³/s')).join('');
     return{work:w,ans:`<div>Q = Σq = <b>${f(r.Q,1)} m³/s</b></div><div>Mean velocity = Q/A = ${f(r.vm)} m/s</div>`,fig:barChart(r.q,NAMES,'m³/s',true)}}});
 });
 
