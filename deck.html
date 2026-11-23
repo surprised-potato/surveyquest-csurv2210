@@ -80,6 +80,10 @@ body.pres #deck{inset:0}
 @keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.04)}100%{transform:scale(1)}}
 .out>div+div{transition:opacity .5s ease}
 .out>div+div.hid{opacity:.15}
+.rvh{opacity:0}
+[data-s]{transition:opacity .55s ease}
+g.rvn,path.rvn,rect.rvn{filter:drop-shadow(0 0 5px var(--good))}
+tr.rvn td{background:color-mix(in srgb,var(--accent) 24%,transparent)}
 .steps{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0}
 .steps .cnt{font-family:ui-monospace,Consolas,monospace;font-size:.8rem;color:var(--muted)}
 @media (prefers-reduced-motion:reduce){.work div.st,.ans,.out>div+div{transition:none}.ans.pop{animation:none}}
@@ -124,6 +128,11 @@ const CALC={
     for(let k=0;k<7;k++)A.push(k===0?.5*l[0]*depths[0]:k===6?.5*l[6]*depths[5]:.5*l[k]*(depths[k-1]+depths[k]));
     const q=A.map((x,k)=>x*v[k]),At=A.reduce((x,y)=>x+y,0),Q=q.reduce((x,y)=>x+y,0);
     return{l,A,q,At,Q,vm:At?Q/At:0,W:a+6*i}},
+  /* compound curve solved from the tangents (class method): degree of curve on the 20 m arc basis, R = 1145.916/D */
+  tan3(sta,I1,I2,D1,D2){const r=x=>x*Math.PI/180,R1=20*180/Math.PI/D1,R2=20*180/Math.PI/D2,I=I1+I2,th=180-I,
+    T1=R1*Math.tan(r(I1/2)),T2=R2*Math.tan(r(I2/2)),V1=(T1+T2)*Math.sin(r(I2))/Math.sin(r(th)),V2=(T1+T2)*Math.sin(r(I1))/Math.sin(r(th)),
+    a=T1+V1,b=T2+V2,LL=Math.sqrt(a*a+b*b-2*a*b*Math.cos(r(th))),beta=Math.asin(b*Math.sin(r(th))/LL)*180/Math.PI,phi=Math.asin(a*Math.sin(r(th))/LL)*180/Math.PI,
+    S1=R1*r(I1),S2=R2*r(I2),pc=sta-a,pcc=pc+S1,pt=pcc+S2;return{R1,R2,I,th,T1,T2,V1,V2,a,b,LL,beta,phi,S1,S2,pc,pcc,pt}},
   fathom(fm){const ft=fm*6;return{ft,m:ft*0.3048}}
 };
 
@@ -141,14 +150,14 @@ function problem(host,spec){
   const paint=(flash)=>{const L=[...W().children];L.forEach(d=>d.classList.add('st'));
     const n=shown===null?L.length:shown;
     L.forEach((d,k)=>{d.classList.toggle('hid',k>=n);d.classList.toggle('now',shown!==null&&k===n-1)});
-    const done=n>=L.length;A().classList.toggle('hid',!done);F().classList.toggle('hid',shown!==null&&n<1);
+    const done=n>=L.length;A().classList.toggle('hid',!done);F().querySelectorAll('[data-s]').forEach(e=>{const k=+e.dataset.s;e.classList.toggle('rvh',k>n);e.classList.toggle('rvn',shown!==null&&k===n)});
     $('#'+spec.id+'-c').textContent=shown===null?'':(done?'all '+L.length+' steps':'step '+n+' of '+L.length);
     if(done&&flash){A().classList.remove('pop');void A().offsetWidth;A().classList.add('pop')}};
   const stop=()=>{clearTimeout(timer);timer=null};
   const play=()=>{stop();shown=0;paint();if(calm){shown=null;paint(true);return}
     const tick=()=>{const L=W().children.length;shown++;paint(true);if(shown<=L)timer=setTimeout(tick,shown===L?600:560);else{shown=null;paint(false)}};timer=setTimeout(tick,350)};
   const next=()=>{stop();const L=W().children.length;if(shown===null)shown=0;shown++;if(shown>L){shown=null}paint(true)};
-  host.addEventListener('enter',play);
+  host.addEventListener('enter',()=>{stop();shown=null;paint(false)}); /* reopening a slide shows the full working; Play steps is manual */
   const upd=()=>{spec.inputs.forEach(x=>{vals[x.k]=+$('#'+spec.id+'-'+x.k).value;$('#'+spec.id+'-'+x.k+'-v').textContent=f(vals[x.k],x.dp??(x.step<1?2:0))+(x.unit?' '+x.unit:'')});
     const r=spec.render(vals);W().innerHTML=r.work;A().innerHTML=r.ans;F().innerHTML=r.fig||'';paint(false)};
   spec.inputs.forEach(x=>$('#'+spec.id+'-'+x.k).addEventListener('input',()=>{upd();if(spec.after)spec.after()}));
@@ -158,29 +167,59 @@ function problem(host,spec){
 }
 
 /* ---------- figures ---------- */
-function compoundSVG(R1,I1,R2,I2,hl){
+function compoundSVG(R1,I1,R2,I2,hl,ref){
   // PC at origin, heading +x, turning left; y is flipped for the screen
   const a1=I1*D2R,a2=(I1+I2)*D2R;
   const P0=[0,0],O1=[0,R1],P1=[R1*Math.sin(a1),R1*(1-Math.cos(a1))];
   const O2=[P1[0]-R2*Math.sin(a1),P1[1]+R2*Math.cos(a1)];
   const P2=[O2[0]+R2*Math.sin(a2),O2[1]-R2*Math.cos(a2)];
-  const pts=[P0,P1,P2,O1,O2];
+  const pts=ref?[P0,P1,P2]:[P0,P1,P2,O1,O2]; /* worked-problem view frames the curve itself so the T, L and LC labels have room */
+  if(ref){const q1=Math.tan(a1/2)*R1,q2=Math.tan((a2-a1)/2)*R2,sg0=-P2[1]/Math.sin(a2);pts.push([q1,0],[P1[0]+q2*Math.cos(a1),P1[1]+q2*Math.sin(a1)],[P2[0]+sg0*Math.cos(a2),0])}
   for(let k=0;k<=12;k++){const t=a1*k/12;pts.push([R1*Math.sin(t),R1*(1-Math.cos(t))]);const u=a1+(a2-a1)*k/12;pts.push([O2[0]+R2*Math.sin(u),O2[1]-R2*Math.cos(u)])}
   /* ghost: the lab values, so a change in R or I is visible against a fixed reference */
   const GR1=300,GI1=30,GR2=200,GI2=40,ga1=GI1*D2R,ga2=(GI1+GI2)*D2R,
     gP1=[GR1*Math.sin(ga1),GR1*(1-Math.cos(ga1))],gO2=[gP1[0]-GR2*Math.sin(ga1),gP1[1]+GR2*Math.cos(ga1)],gP2=[gO2[0]+GR2*Math.sin(ga2),gO2[1]-GR2*Math.cos(ga2)];
-  pts.push([0,GR1],gP1,gO2,gP2);
-  for(let k=0;k<=12;k++){const t=ga1*k/12;pts.push([GR1*Math.sin(t),GR1*(1-Math.cos(t))]);const u=ga1+(ga2-ga1)*k/12;pts.push([gO2[0]+GR2*Math.sin(u),gO2[1]-GR2*Math.cos(u)])}
+  const noGhost=ref&&ref.noghost;
+  if(!noGhost){pts.push(...(ref?[gP1,gP2]:[[0,GR1],gP1,gO2,gP2]));
+  for(let k=0;k<=12;k++){const t=ga1*k/12;pts.push([GR1*Math.sin(t),GR1*(1-Math.cos(t))]);const u=ga1+(ga2-ga1)*k/12;pts.push([gO2[0]+GR2*Math.sin(u),gO2[1]-GR2*Math.cos(u)])}}
   const xs=pts.map(p=>p[0]),ys=pts.map(p=>-p[1]);
   let x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
   const pad=Math.max(x1-x0,y1-y0)*.1;x0-=pad;x1+=pad;y0-=pad;y1+=pad;
+  if(ref){y1+=pad*.9;x1+=pad*.6;const nr=['T1','L1','LC1','T2','L2','LC2','V1','V2','LL'].filter(k=>ref[k]!==undefined).length+(ref.PI!==undefined?2:0);if(nr>6)y0-=(nr-5)*.04*Math.max(x1-x0,y1-y0)*1.25}
   const w=x1-x0,h=y1-y0,fs=Math.max(w,h)*.04,P=p=>`${f(p[0],1)},${f(-p[1],1)}`;
   const tl=Math.max(w,h)*.12;
   const th=(d)=>`<path d="${d}" fill="none" stroke="var(--good)" stroke-width="9" opacity=".6" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`;
   const wedge=(O,R,A,B,t)=>{const r=R*.3;return `<path d="M${P([O[0]+r*Math.sin(A),O[1]-r*Math.cos(A)])} A${r} ${r} 0 0 0 ${P([O[0]+r*Math.sin(B),O[1]-r*Math.cos(B)])}" fill="none" stroke="var(--good)" stroke-width="4" vector-effect="non-scaling-stroke"/><text x="${f(O[0]+r*1.15*Math.sin((A+B)/2),1)}" y="${f(-(O[1]-r*1.15*Math.cos((A+B)/2)),1)}" font-size="${f(fs*1.2,1)}" fill="var(--good)">${t}</text>`};
   const same=R1===GR1&&I1===GI1&&R2===GR2&&I2===GI2,Pg=p=>`${f(p[0],1)},${f(-p[1],1)}`;
-  const ghost=same?'':`<path d="M0,0 A${GR1} ${GR1} 0 0 0 ${Pg(gP1)} A${GR2} ${GR2} 0 0 0 ${Pg(gP2)}" fill="none" stroke="var(--muted)" stroke-width="2" stroke-dasharray="6 5" opacity=".8" vector-effect="non-scaling-stroke"/><text x="${f(gP2[0],1)}" y="${f(-gP2[1]+fs*1.6,1)}" font-size="${f(fs*.9,1)}" fill="var(--muted)" text-anchor="end">dashed = lab values</text>`;
-  const sbar=`<path d="M${f(x0+pad*.5,1)} ${f(y1-pad*.5,1)}h100" stroke="var(--ink)" stroke-width="3" vector-effect="non-scaling-stroke"/><text x="${f(x0+pad*.5,1)}" y="${f(y1-pad*.5-fs*.4,1)}" font-size="${f(fs*.9,1)}">100 m</text>`;
+  const ghost=same||noGhost?'':`<path d="M0,0 A${GR1} ${GR1} 0 0 0 ${Pg(gP1)} A${GR2} ${GR2} 0 0 0 ${Pg(gP2)}" fill="none" stroke="var(--muted)" stroke-width="2" stroke-dasharray="6 5" opacity=".8" vector-effect="non-scaling-stroke"/><text x="${f(gP2[0],1)}" y="${f(-gP2[1]+fs*1.6,1)}" font-size="${f(fs*.9,1)}" fill="var(--muted)" text-anchor="end">dashed = lab values</text>`;
+  const sx=x1-pad*.5-100;const sbar=`<path d="M${f(sx,1)} ${f(y1-pad*.5,1)}h100" stroke="var(--ink)" stroke-width="3" vector-effect="non-scaling-stroke"/><text x="${f(sx,1)}" y="${f(y1-pad*.5-fs*.4,1)}" font-size="${f(fs*.9,1)}">100 m</text>`;
+  let refx='';
+  if(ref){
+    const A1=CALC.arc(R1,I1),A2=CALC.arc(R2,I2),out=a=>[Math.sin(a),-Math.cos(a)];
+    const PI1=[A1.t,0],PI2=[P1[0]+A2.t*Math.cos(a1),P1[1]+A2.t*Math.sin(a1)];
+    const sg=-P2[1]/Math.sin(a2),PIv=[P2[0]+sg*Math.cos(a2),0],V1g=PIv[0]-A1.t,V2g=Math.abs(sg)-A2.t;
+    const ORDER=['T1','L1','LC1','T2','L2','LC2','V1','V2','TV1','TV2','LL'],rows=ORDER.filter(k=>k==='TV1'||k==='TV2'?ref.PI!==undefined:ref[k]!==undefined);
+    const n1=ref.sc?'S꜀₁':'L₁',n2=ref.sc?'S꜀₂':'L₂';
+    const lab=(p,txt,col)=>`<text x="${f(p[0],1)}" y="${f(-p[1],1)}" font-size="${f(fs*.95,1)}" fill="${col}" text-anchor="middle" style="paint-order:stroke;stroke:var(--paper2);stroke-width:5px;stroke-linejoin:round">${txt}</text>`;
+    const seg=(a,b,col,dash)=>`<path d="M${P(a)}L${P(b)}" stroke="${col}" stroke-width="2.6" ${dash?'stroke-dasharray="8 5"':''} fill="none" vector-effect="non-scaling-stroke"/>`;
+    const at=(a,b,o,k)=>[(a[0]+b[0])/2+o[0]*k,(a[1]+b[1])/2+o[1]*k];
+    const pi=(p,n)=>`<circle cx="${f(p[0],1)}" cy="${f(-p[1],1)}" r="${f(fs*.3,1)}" fill="var(--bad)"/>`+lab([p[0],p[1]+fs*.9],n,'var(--bad)');
+    const leg=(key,col,dash,txt)=>{const ly=y0+pad*.55+rows.indexOf(key)*fs*1.25,lx=x0+pad*.5;return `<path d="M${f(lx,1)} ${f(ly,1)}h${f(fs*2,1)}" stroke="${col}" stroke-width="${col==='var(--good)'?7:2.6}" ${dash?'stroke-dasharray="8 5"':''} opacity="${col==='var(--good)'?.6:1}" vector-effect="non-scaling-stroke"/><text x="${f(lx+fs*2.5,1)}" y="${f(ly+fs*.3,1)}" font-size="${f(fs*.85,1)}" fill="${col}">${txt}</text>`};
+    const grp=(k,body)=>k?`<g data-s="${k}">${body}</g>`:`<g>${body}</g>`;
+    const tang=(key,k,n,a,p,b,oa,ob,t)=>grp(k,seg(a,p,'var(--bad)')+seg(p,b,'var(--bad)')+pi(p,'PI'+n)+lab(at(a,p,oa,fs*1.5),`T${n}`,'var(--bad)')+lab(at(p,b,ob,fs*1.5),`T${n}`,'var(--bad)')+leg(key,'var(--bad)',false,`T${n} = ${f(t)} m`));
+    const um=(a1+a2)/2;
+    if(ref.T1!==undefined)refx+=tang('T1',ref.T1,'₁',P0,PI1,P1,[0,-1],out(a1),A1.t);
+    if(ref.L1!==undefined)refx+=grp(ref.L1,th(`M${P(P0)} A${R1} ${R1} 0 0 0 ${P(P1)}`)+lab([R1*Math.sin(a1/2)+out(a1/2)[0]*fs*2.4,R1*(1-Math.cos(a1/2))+out(a1/2)[1]*fs*2.4],n1,'var(--good)')+leg('L1','var(--good)',false,`${n1} = ${f(A1.L)} m`));
+    if(ref.LC1!==undefined)refx+=grp(ref.LC1,seg(P0,P1,'var(--ink)',true)+lab(at(P0,P1,[-Math.sin(a1/2),Math.cos(a1/2)],fs*1.6),'LC₁','var(--ink)')+leg('LC1','var(--ink)',true,`LC₁ = ${f(A1.LC)} m`));
+    if(ref.T2!==undefined)refx+=tang('T2',ref.T2,'₂',P1,PI2,P2,out(a1),out(a2),A2.t);
+    if(ref.L2!==undefined)refx+=grp(ref.L2,th(`M${P(P1)} A${R2} ${R2} 0 0 0 ${P(P2)}`)+lab([O2[0]+R2*Math.sin(um)+out(um)[0]*fs*2.4,O2[1]-R2*Math.cos(um)+out(um)[1]*fs*2.4],n2,'var(--good)')+leg('L2','var(--good)',false,`${n2} = ${f(A2.L)} m`));
+    if(ref.LC2!==undefined)refx+=grp(ref.LC2,seg(P1,P2,'var(--ink)',true)+lab(at(P1,P2,[-Math.sin(um),Math.cos(um)],fs*1.6),'LC₂','var(--ink)')+leg('LC2','var(--ink)',true,`LC₂ = ${f(A2.LC)} m`));
+    if(ref.V1!==undefined)refx+=grp(ref.V1,seg(PI1,PIv,'var(--c1)')+lab(at(PI1,PIv,[0,-1],fs*1.5),'V₁','var(--c1)')+leg('V1','var(--c1)',false,`V₁ = ${f(V1g)} m`));
+    if(ref.V2!==undefined)refx+=grp(ref.V2,seg(PI2,PIv,'var(--c1)')+lab(at(PI2,PIv,out(a2),fs*1.5),'V₂','var(--c1)')+leg('V2','var(--c1)',false,`V₂ = ${f(V2g)} m`));
+    if(ref.PI!==undefined)refx+=grp(ref.PI,pi(PIv,'PI')+leg('TV1','var(--ink)',false,`T₁+V₁ = ${f(A1.t+V1g)} m`)+leg('TV2','var(--ink)',false,`T₂+V₂ = ${f(A2.t+V2g)} m`));
+    if(ref.LL!==undefined)refx+=grp(ref.LL,seg(P0,P2,'var(--muted)',true)+lab(at(P0,P2,[Math.sin(Math.atan2(P2[1],P2[0])),-Math.cos(Math.atan2(P2[1],P2[0]))],fs*-1.6),'L_L','var(--muted)')+leg('LL','var(--muted)',true,`L_L = ${f(Math.hypot(P2[0],P2[1]))} m`));
+    [['PC',P0],['PCC',P1],['PT',P2]].forEach(([n,p])=>{if(ref[n]!==undefined)refx+=grp(ref[n],`<circle cx="${f(p[0],1)}" cy="${f(-p[1],1)}" r="${f(fs*1.2,1)}" fill="none" stroke="var(--good)" stroke-width="4" vector-effect="non-scaling-stroke"/>`+(ref.stn?lab([p[0],p[1]-fs*2.4],ref.stn[n],'var(--good)'):''))});
+  }
   let hlx='';
   if(hl==='L1')hlx=th(`M${P(P0)} A${R1} ${R1} 0 0 0 ${P(P1)}`);
   else if(hl==='L2')hlx=th(`M${P(P1)} A${R2} ${R2} 0 0 0 ${P(P2)}`);
@@ -196,13 +235,13 @@ function compoundSVG(R1,I1,R2,I2,hl){
   <path d="M${P(O1)}L${P(P0)}M${P(O1)}L${P(P1)}" stroke="var(--c1)" stroke-width="1.2" stroke-dasharray="4 3" fill="none" vector-effect="non-scaling-stroke"/>
   <path d="M${P(O2)}L${P(P1)}M${P(O2)}L${P(P2)}" stroke="var(--accent)" stroke-width="1.2" stroke-dasharray="4 3" fill="none" vector-effect="non-scaling-stroke"/>
   ${[['PC',P0],['PCC',P1],['PT',P2]].map(([n,p])=>`<circle cx="${f(p[0],1)}" cy="${f(-p[1],1)}" r="${f(fs*.35,1)}" fill="var(--ink)"/><text x="${f(p[0]+fs*.7,1)}" y="${f(-p[1]-fs*.6,1)}" font-size="${f(fs,1)}">${n}</text>`).join('')}
-  <text x="${f(O1[0]+fs*.5,1)}" y="${f(-O1[1],1)}" font-size="${f(fs,1)}" fill="var(--c1)">O₁</text>
-  <text x="${f(O2[0]+fs*.5,1)}" y="${f(-O2[1],1)}" font-size="${f(fs,1)}">O₂</text>${ghost}${sbar}${hlx}</svg>`}
+  ${ref?'':`<text x="${f(O1[0]+fs*.5,1)}" y="${f(-O1[1],1)}" font-size="${f(fs,1)}" fill="var(--c1)">O₁</text><text x="${f(O2[0]+fs*.5,1)}" y="${f(-O2[1],1)}" font-size="${f(fs,1)}">O₂</text>`}${ghost}${sbar}${hlx}${refx}</svg>`}
 
-function lineChart(xs,ys,cx,cy,xl,yl){
-  const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys),W=400,H=240,L=50,B=34,T=14,Rr=14;
+function lineChart(xs,ys,cx,cy,xl,yl,fixY,ghost){
+  const x0=Math.min(...xs),x1=Math.max(...xs),y0=fixY?fixY[0]:Math.min(...ys),y1=fixY?fixY[1]:Math.max(...ys),W=400,H=240,L=50,B=34,T=14,Rr=14;
   const X=x=>L+(x-x0)/(x1-x0)*(W-L-Rr),Y=y=>H-B-(y-y0)/(y1-y0||1)*(H-B-T);
   return `<svg class="plot" viewBox="0 0 ${W} ${H}" role="img" aria-label="${yl} against ${xl}">
+  ${ghost?`<path d="M${xs.map((x,i)=>X(x)+','+Y(ghost[i])).join('L')}" fill="none" stroke="var(--muted)" stroke-width="2" stroke-dasharray="6 5"/><text x="${W-Rr-4}" y="${Y(ghost[ghost.length-1])+14}" font-size="10" text-anchor="end" fill="var(--muted)">dashed: I₂ = 40°</text>`:''}
   <path d="M${xs.map((x,i)=>X(x)+','+Y(ys[i])).join('L')}" fill="none" stroke="var(--c1)" stroke-width="3"/>
   <circle cx="${X(cx)}" cy="${Y(cy)}" r="6" fill="var(--accent)"/>
   <line x1="${L}" y1="${H-B}" x2="${W-Rr}" y2="${H-B}" stroke="var(--ink)"/><line x1="${L}" y1="${T}" x2="${L}" y2="${H-B}" stroke="var(--ink)"/>
@@ -211,7 +250,23 @@ function lineChart(xs,ys,cx,cy,xl,yl){
   <text x="${L-4}" y="${H-B}" font-size="11" text-anchor="end">${f(y0,0)}</text><text x="${L-4}" y="${T+8}" font-size="11" text-anchor="end">${f(y1,0)}</text>
   <text x="${X(cx)}" y="${Y(cy)-10}" font-size="11" text-anchor="middle" fill="var(--accent)">${f(cy,1)}</text></svg>`}
 
-function crossSection(depths,l,W){
+/* triangle PI1-PI2-PI formed by the two tangents and the common tangent; fixed scale so a change is visible */
+function triSVG(I1,I2,Tc){
+  const r=Math.PI/180,th=180-I1-I2,V1=Tc*Math.sin(I2*r)/Math.sin(th*r),V2=Tc*Math.sin(I1*r)/Math.sin(th*r),A=[V1*Math.cos(I1*r),V1*Math.sin(I1*r)];
+  const x0=-50,x1=470,y0=-215,y1=60,fs=12,Pt=p=>`${f(p[0],1)},${f(-p[1],1)}`;
+  const lab=(x,y,t,c,a)=>`<text x="${f(x,1)}" y="${f(-y,1)}" font-size="${fs}" fill="${c||'var(--ink)'}" text-anchor="${a||'middle'}" style="paint-order:stroke;stroke:var(--paper2);stroke-width:4px">${t}</text>`;
+  const wd=(p,a0,a1,rad,t,k)=>{const m=(a0+a1)/2,q=(a)=>[p[0]+rad*Math.cos(a),p[1]+rad*Math.sin(a)];return `<g data-s="${k}"><path d="M${Pt(q(a0))} A${rad} ${rad} 0 0 0 ${Pt(q(a1))}" fill="none" stroke="var(--good)" stroke-width="3.5" vector-effect="non-scaling-stroke"/>${lab(p[0]+(rad+16)*Math.cos(m),p[1]+(rad+16)*Math.sin(m)-5,t,'var(--good)')}</g>`};
+  const side=(a,b,k,t,col)=>`<g data-s="${k}"><path d="M${Pt(a)}L${Pt(b)}" stroke="${col}" stroke-width="6" opacity=".55" stroke-linecap="round" vector-effect="non-scaling-stroke"/>${lab((a[0]+b[0])/2+(t[1]||0),(a[1]+b[1])/2+(t[2]||0),t[0],col)}</g>`;
+  const sbar=`<path d="M${x0+14} ${y1-14}h100" stroke="var(--ink)" stroke-width="3" vector-effect="non-scaling-stroke"/><text x="${x0+14}" y="${y1-22}" font-size="13">100 m</text>`;
+  return `<svg class="plot" viewBox="${x0} ${y0} ${x1-x0} ${y1-y0}" role="img" aria-label="Triangle PI1, PI2, PI with angles ${I1}, ${I2} and ${f(th,0)} degrees">
+  <path d="M0,0 L${f(Tc,1)},0 L${Pt(A)} Z" fill="var(--paper)" stroke="var(--ink)" stroke-width="2" vector-effect="non-scaling-stroke"/>
+  <path d="M${Pt([-40,0])}L0,0M${f(Tc,1)},0L${Pt([Tc+30,0])}" stroke="var(--muted)" stroke-dasharray="5 4" vector-effect="non-scaling-stroke"/>
+  ${wd([0,0],0,I1*r,48,'I₁',1)}${wd([Tc,0],Math.PI-I2*r,Math.PI,48,'I₂',1)}${wd(A,Math.PI+I1*r,2*Math.PI-I2*r,40,'θ',2)}
+  ${side([0,0],A,3,['V₁',-18,8],'var(--c1)')}${side([Tc,0],A,4,['V₂',18,8],'var(--accent)')}
+  <circle cx="0" cy="0" r="4" fill="var(--ink)"/><circle cx="${f(Tc,1)}" cy="0" r="4" fill="var(--ink)"/><circle cx="${f(A[0],1)}" cy="${f(-A[1],1)}" r="4" fill="var(--ink)"/>
+  ${lab(-4,-24,'PI₁','',  'end')}${lab(Tc+4,-24,'PI₂','','start')}${lab(A[0],A[1]+14,'PI')}${lab(Tc/2,-24,`T₁+T₂ = ${f(Tc,0)} m`)}${sbar}</svg>`}
+
+function crossSection(depths,l,W,A){
   const xs=[0];let acc=l[0];for(let k=0;k<6;k++){xs.push(acc);acc+=l[k+1]}xs.push(W);
   const ds=[0,...depths,0],dmax=Math.max(3,...depths)*1.15;
   const w=400,h=220,L=14,Rr=14,T=26,B=14,X=x=>L+x/W*(w-L-Rr),Y=d=>T+d/dmax*(h-T-B);
@@ -220,13 +275,14 @@ function crossSection(depths,l,W){
   <polygon points="${X(0)},${Y(0)} ${poly} ${X(W)},${Y(0)}" fill="var(--c1)" opacity=".35" stroke="var(--c1)" stroke-width="2"/>
   <line x1="${X(0)-6}" y1="${Y(0)}" x2="${X(W)+6}" y2="${Y(0)}" stroke="var(--ink)" stroke-width="2" stroke-dasharray="6 4"/>
   ${xs.map((x,i)=>i>0&&i<7?`<line x1="${X(x)}" y1="${Y(0)}" x2="${X(x)}" y2="${Y(ds[i])}" stroke="var(--ink)" stroke-width="1" stroke-dasharray="3 3"/><text x="${X(x)}" y="${Y(ds[i])+13}" font-size="10" text-anchor="middle">${f(ds[i],1)}</text>`:'').join('')}
+  ${A?xs.slice(0,7).map((x,k)=>{const x1=xs[k+1],cx=(X(x)+X(x1))/2;return `<g data-s="${k+1}"><polygon points="${X(x)},${Y(0)} ${X(x)},${Y(ds[k])} ${X(x1)},${Y(ds[k+1])} ${X(x1)},${Y(0)}" fill="var(--good)" opacity=".55" stroke="var(--good)" stroke-width="1.5"/><text x="${cx}" y="${Y(0)+11}" font-size="10" text-anchor="middle" font-weight="bold">${NAMES[k]}</text><text x="${cx}" y="${Y(0)+22}" font-size="9" text-anchor="middle">${f(A[k])}</text></g>`}).join(''):''}
   <text x="${X(0)}" y="16" font-size="11" text-anchor="start">RWE</text><text x="${X(W)}" y="16" font-size="11" text-anchor="end">LWE</text>
   <text x="${w/2}" y="16" font-size="11" text-anchor="middle">${f(W,0)} m wide</text></svg>`}
 
-function barChart(vals,labels,unit){
+function barChart(vals,labels,unit,steps){
   const w=400,h=220,L=36,B=26,T=22,mx=Math.max(1,...vals)*1.1,bw=(w-L-10)/vals.length;
   return `<svg class="plot" viewBox="0 0 ${w} ${h}" role="img" aria-label="Partial discharge of each section in ${unit}">
-  ${vals.map((v,i)=>{const bh=v/mx*(h-T-B),x=L+i*bw+6;return `<rect x="${x}" y="${h-B-bh}" width="${bw-12}" height="${bh}" fill="var(--accent)"/><text x="${x+(bw-12)/2}" y="${h-B-bh-4}" font-size="10" text-anchor="middle">${f(v,1)}</text><text x="${x+(bw-12)/2}" y="${h-8}" font-size="11" text-anchor="middle">${labels[i]}</text>`}).join('')}
+  ${vals.map((v,i)=>{const bh=v/mx*(h-T-B),x=L+i*bw+6;const g=`<rect x="${x}" y="${h-B-bh}" width="${bw-12}" height="${bh}" fill="var(--accent)"/><text x="${x+(bw-12)/2}" y="${h-B-bh-4}" font-size="10" text-anchor="middle">${f(v,1)}</text>`;return (steps?`<g data-s="${i+1}">${g}</g>`:g)+`<text x="${x+(bw-12)/2}" y="${h-8}" font-size="11" text-anchor="middle">${labels[i]}</text>`}).join('')}
   <line x1="${L}" y1="${h-B}" x2="${w-6}" y2="${h-B}" stroke="var(--ink)"/><text x="4" y="12" font-size="11">q (${unit})</text></svg>`}
 
 /* ---------- explanation visuals ---------- */
@@ -431,7 +487,7 @@ const slides=[];
 const S=(html,init)=>slides.push({html,init});
 const FORMULA=`<div class="formula"><div><i class="v">T</i> = <i class="v">R</i> tan(<i class="v">I</i>/2)</div><div><i class="v">L<sub>c</sub></i> = <i class="v">R I</i> (<i class="v">I</i> in radians)</div><div><i class="v">LC</i> = 2<i class="v">R</i> sin(<i class="v">I</i>/2)</div><div><i class="v">E</i> = <i class="v">R</i>(sec(<i class="v">I</i>/2) − 1)</div><div><i class="v">M</i> = <i class="v">R</i>(1 − cos(<i class="v">I</i>/2))</div></div>`;
 
-S(`<div class="in hero"><div class="kick">CSURV2210 Higher Surveying · CSURV221P Lab</div><h1>Compound curves<br>and hydrographic surveying</h1><p>Two topics, eight interactive worked problems and seven interactive explanations. Drag the sliders to change a given value and watch the working and the answer change with it.</p><div class="card"><b>By the end you can</b><ul><li>name the parts of a compound curve and compute each arc with the Lab 10 formulas</li><li>find the stations of the PC, PCC and PT, and a stake-out table of deflection angles and chords</li><li>reduce a Lab 9 stream cross-section to areas and a total discharge Q</li></ul></div><p class="note">Use the arrow keys, swipe, or the buttons below. Numbers come from the lab manual (2025-2026 edition): Lab 10 (simple curve by chord deflection) and Lab 9 (stream gaging).</p></div>`);
+S(`<div class="in hero"><div class="kick">CSURV2210 Higher Surveying · CSURV221P Lab</div><h1>Compound curves<br>and hydrographic surveying</h1><p>Two topics, nine interactive worked problems and seven interactive explanations. Drag the sliders to change a given value and watch the working and the answer change with it.</p><div class="card"><b>By the end you can</b><ul><li>name the parts of a compound curve and compute each arc with the Lab 10 formulas</li><li>find the stations of the PC, PCC and PT, and a stake-out table of deflection angles and chords</li><li>reduce a Lab 9 stream cross-section to areas and a total discharge Q</li></ul></div><p class="note">Use the arrow keys, swipe, or the buttons below. Numbers come from the lab manual (2025-2026 edition): Lab 10 (simple curve by chord deflection) and Lab 9 (stream gaging).</p></div>`);
 
 S(`<div class="in"><div class="kick">Part A · Compound curves</div><h2>Recap: the simple curve (Lab 10)</h2><div class="grid2"><div><p>Every arc of a compound curve is a simple curve. Lab 10 gives the elements:</p><ul><li><b>PC, PT</b>: beginning and end of the curve</li><li><b>PI</b>: where the tangents meet</li><li><b>R, I</b>: radius and central (deflection) angle</li><li><b>T</b> tangent, <b>L<sub>c</sub></b> arc, <b>LC</b> long chord, <b>E</b> external, <b>M</b> middle ordinate</li></ul></div><div>${FORMULA}<p>Stationing: <i class="v">PC</i> = <i class="v">PI</i> − <i class="v">T</i>, <i class="v">PT</i> = <i class="v">PC</i> + <i class="v">L<sub>c</sub></i>.</p></div></div><p class="note">Lab 10 stakes the curve by the chord deflection method: set up at the PC, zero on the back tangent, then turn the deflection angle and measure the chord from the last stake.</p><div id="vSimple"></div></div>`,()=>vizSimple());
 
@@ -443,26 +499,26 @@ S(`<div class="in"><div class="kick">Part A · Compound curves</div><h2>Anatomy 
 <div class="formula"><div><i class="v">L<sub>1</sub></i> = <i class="v">R<sub>1</sub> I<sub>1</sub></i></div><div><i class="v">L<sub>2</sub></i> = <i class="v">R<sub>2</sub> I<sub>2</sub></i></div><div><i class="v">PCC</i> = <i class="v">PC</i> + <i class="v">L<sub>1</sub></i></div><div><i class="v">PT</i> = <i class="v">PCC</i> + <i class="v">L<sub>2</sub></i></div></div></div><div id="anat"></div></div><p class="note">The two arcs share the radius line through the PCC: O₁, the PCC and O₂ lie on one straight line, because both arcs have the same tangent there.</p></div>`,
  ()=>vizAnat());
 
-S(`<div class="in"><div class="kick">Part A · Problem 1 of 4</div><h2>The two arcs</h2><div id="pA1"></div></div>`,()=>{
+S(`<div class="in"><div class="kick">Part A · Problem 1 of 5</div><h2>The two arcs</h2><div id="pA1"></div></div>`,()=>{
   problem($('#pA1'),{id:'a1',tag:'Interactive',title:'Elements of each arc',
    given:'A compound curve has R₁ = 300 m, I₁ = 30° and R₂ = 200 m, I₂ = 40°. Find T, L<sub>c</sub> and LC for each arc and the total length.',
    inputs:[{k:'R1',label:'R₁',min:100,max:600,step:10,v:300,unit:'m'},{k:'I1',label:'I₁',min:10,max:80,step:1,v:30,unit:'°'},{k:'R2',label:'R₂',min:100,max:600,step:10,v:200,unit:'m'},{k:'I2',label:'I₂',min:10,max:80,step:1,v:40,unit:'°'}],
    render:v=>{const a=CALC.arc(v.R1,v.I1),b=CALC.arc(v.R2,v.I2);
     return{work:`<div><b>Arc 1</b></div><div>T₁ = ${v.R1} tan(${v.I1}°/2) = ${f(a.t)} m</div><div>L₁ = ${v.R1}(${v.I1}° × π/180) = ${f(a.L)} m</div><div>LC₁ = 2(${v.R1}) sin(${v.I1}°/2) = ${f(a.LC)} m</div><div style="margin-top:6px"><b>Arc 2</b></div><div>T₂ = ${v.R2} tan(${v.I2}°/2) = ${f(b.t)} m</div><div>L₂ = ${v.R2}(${v.I2}° × π/180) = ${f(b.L)} m</div><div>LC₂ = 2(${v.R2}) sin(${v.I2}°/2) = ${f(b.LC)} m</div>`,
-     ans:`<div>L = L₁ + L₂ = ${f(a.L)} + ${f(b.L)}</div><div><b>L = ${f(a.L+b.L)} m</b> · I = ${v.I1+v.I2}°</div>`,fig:compoundSVG(v.R1,v.I1,v.R2,v.I2)}}});
+     ans:`<div>L = L₁ + L₂ = ${f(a.L)} + ${f(b.L)}</div><div><b>L = ${f(a.L+b.L)} m</b> · I = ${v.I1+v.I2}°</div>`,fig:compoundSVG(v.R1,v.I1,v.R2,v.I2,null,{T1:2,L1:3,LC1:4,T2:6,L2:7,LC2:8})}}});
 });
 
-S(`<div class="in"><div class="kick">Part A · Problem 2 of 4</div><h2>Stationing the curve</h2><div id="pA2"></div></div>`,()=>{
+S(`<div class="in"><div class="kick">Part A · Problem 2 of 5</div><h2>Stationing the curve</h2><div id="pA2"></div></div>`,()=>{
   problem($('#pA2'),{id:'a2',tag:'Interactive',title:'Stations of the PC, PCC and PT',
    given:'The PC is at station 1+200.00. Use the arcs of Problem 1 (R₁ = 300 m, I₁ = 30°, R₂ = 200 m, I₂ = 40°). Find the stations of the PCC and the PT. Then change the PC station or an arc.',
    inputs:[{k:'pc',label:'PC station (m)',min:800,max:2400,step:10,v:1200,unit:'m',dp:0},{k:'R1',label:'R₁',min:100,max:600,step:10,v:300,unit:'m'},{k:'I1',label:'I₁',min:10,max:80,step:1,v:30,unit:'°'},{k:'R2',label:'R₂',min:100,max:600,step:10,v:200,unit:'m'},{k:'I2',label:'I₂',min:10,max:80,step:1,v:40,unit:'°'}],
    render:v=>{const a=CALC.arc(v.R1,v.I1),b=CALC.arc(v.R2,v.I2),pcc=v.pc+a.L,pt=pcc+b.L;
     return{work:`<div>PC = ${stn(v.pc)}</div><div>L₁ = ${f(a.L)} m</div><div>PCC = PC + L₁ = ${f(v.pc)} + ${f(a.L)} = ${stn(pcc)}</div><div>L₂ = ${f(b.L)} m</div><div>PT = PCC + L₂ = ${f(pcc)} + ${f(b.L)}</div>`,
      ans:`<div>PCC = <b>${stn(pcc)}</b></div><div>PT = <b>${stn(pt)}</b></div>`,
-     fig:`<div class="card"><table><tr><th>Point</th><th>Station</th><th>Chainage (m)</th></tr><tr><td>PC</td><td>${stn(v.pc)}</td><td>${f(v.pc)}</td></tr><tr><td>PCC</td><td>${stn(pcc)}</td><td>${f(pcc)}</td></tr><tr><td>PT</td><td>${stn(pt)}</td><td>${f(pt)}</td></tr></table><p class="note" style="margin:8px 0 0">Station 1+200.00 means 1 km + 200.00 m = 1200.00 m.</p></div>`}}});
+     fig:`<div class="card"><table><tr><th>Point</th><th>Station</th><th>Chainage (m)</th></tr><tr data-s="1"><td>PC</td><td>${stn(v.pc)}</td><td>${f(v.pc)}</td></tr><tr data-s="3"><td>PCC</td><td>${stn(pcc)}</td><td>${f(pcc)}</td></tr><tr data-s="5"><td>PT</td><td>${stn(pt)}</td><td>${f(pt)}</td></tr></table><p class="note" style="margin:8px 0 0">Station 1+200.00 means 1 km + 200.00 m = 1200.00 m.</p></div>`}}});
 });
 
-S(`<div class="in"><div class="kick">Part A · Problem 3 of 4</div><h2>Staking out, Lab 10 style</h2><div id="pA3"></div></div>`,()=>{
+S(`<div class="in"><div class="kick">Part A · Problem 3 of 5</div><h2>Staking out, Lab 10 style</h2><div id="pA3"></div></div>`,()=>{
   problem($('#pA3'),{id:'a3',tag:'Interactive',title:'Deflection angles and chords',
    given:'Same curve, PC at 1+200.00. Lay out arc 1 from the PC and arc 2 from the PCC by the chord deflection method. Choose the station interval; each stake is found by turning the deflection angle and measuring the chord from the previous stake.',
    inputs:[{k:'s',label:'Station interval',min:5,max:40,step:5,v:20,unit:'m',dp:0},{k:'R1',label:'R₁',min:100,max:600,step:10,v:300,unit:'m'},{k:'R2',label:'R₂',min:100,max:600,step:10,v:200,unit:'m'}],
@@ -476,7 +532,7 @@ S(`<div class="in"><div class="kick">Part A · Problem 3 of 4</div><h2>Staking o
      fig:`<div class="tablewrap"><table><tr><th>Station</th><th>Point</th><th>Deflection</th><th>Chord (m)</th></tr>${tab(t1,'PC','PCC')}<tr><th colspan="4">Set up at the PCC</th></tr>${tab(t2,'PCC','PT')}</table></div>`}}});
 });
 
-S(`<div class="in"><div class="kick">Part A · Problem 4 of 4</div><h2>What if R₂ changes?</h2><div id="pA4"></div></div>`,()=>{
+S(`<div class="in"><div class="kick">Part A · Problem 4 of 5</div><h2>What if R₂ changes?</h2><div id="pA4"></div></div>`,()=>{
   problem($('#pA4'),{id:'a4',tag:'Interactive',title:'Sensitivity of the length',
    given:'Keep arc 1 (R₁ = 300 m, I₁ = 30°) and the second arc angle I₂ = 40°. Slide R₂ and see how L₂, the PT station and the total length respond. PC = 1+200.00.',
    inputs:[{k:'R2',label:'R₂',min:100,max:500,step:10,v:200,unit:'m'},{k:'I2',label:'I₂',min:10,max:80,step:1,v:40,unit:'°'}],
@@ -484,7 +540,44 @@ S(`<div class="in"><div class="kick">Part A · Problem 4 of 4</div><h2>What if R
     const xs=[],ys=[];for(let r=100;r<=500;r+=20){xs.push(r);ys.push(a.L+CALC.arc(r,v.I2).L)}
     return{work:`<div>L₂ = R₂ I₂ = ${v.R2}(${v.I2}° × π/180) = ${f(b.L)} m</div><div>PT = PCC + L₂ = ${f(pcc)} + ${f(b.L)}</div><div>Doubling R₂ doubles L₂, because L = R I.</div>`,
      ans:`<div>L₂ = <b>${f(b.L)} m</b></div><div>PT = <b>${stn(pt)}</b></div><div>Total L = <b>${f(a.L+b.L)} m</b></div>`,
-     fig:lineChart(xs,ys,v.R2,a.L+b.L,'R₂ (m)','Total L (m)')}}});
+     fig:lineChart(xs,ys,v.R2,a.L+b.L,'R₂ (m)','Total L (m)',[0,900],xs.map(r=>a.L+CALC.arc(r,40).L))}}});
+});
+
+S(`<div class="in"><div class="kick">Part A · Compound curves from the tangents</div><h2>The symbols</h2><div class="grid2"><div class="card" style="font-size:.9rem"><b>PC</b> point of curvature, where the first curve leaves the first tangent<br><b>PT</b> point of tangency, where the second curve meets the second tangent<br><b>PI</b> intersection of the first and second tangents<br><b>PI₁</b> first tangent meets the common tangent<br><b>PI₂</b> common tangent meets the second tangent<br><b>PCC</b> point of compound curve, where the two curves join<br><b>I</b> intersection angle between the first and second tangents<br><b>I₁, I₂</b> intersection angles at PI₁ and PI₂<br><b>R₁, R₂</b> radius of the first and second curve<br><b>T₁+V₁</b> tangent distance on the side of the first curve<br><b>T₂+V₂</b> tangent distance on the side of the second curve<br><b>T₁+T₂</b> length of the common tangent<br><b>LC₁, LC₂</b> long chords of the two curves<br><b>S꜀₁, S꜀₂</b> lengths of the first and second curve<br><b>L_L</b> length of the common long chord</div><div id="symFig"></div></div><p class="note">The figure uses the worked example that follows: I₁ = 31°, I₂ = 36°, D₁ = 3°, D₂ = 5°.</p></div>`,()=>{
+  const c=CALC.tan3(2550,31,36,3,5);$('#symFig').innerHTML=compoundSVG(c.R1,31,c.R2,36,null,{noghost:1,T1:0,T2:0,V1:0,V2:0,PI:0,LL:0,L1:0,L2:0,sc:1})});
+
+S(`<div class="in"><div class="kick">Part A · Compound curves from the tangents</div><h2>Solving the triangle PI₁–PI₂–PI</h2><p>The two tangents and the common tangent form a triangle. Its angles are I₁, I₂ and θ = 180° − I, so I = I₁ + I₂. The sine law then gives the tangent lengths V₁ and V₂ (T₁ = R₁ tan(I₁/2) and T₂ = R₂ tan(I₂/2) come from the simple curve).</p><div id="pTri"></div></div>`,()=>{
+  problem($('#pTri'),{id:'tri',tag:'Try it',title:'V₁ and V₂ from the common tangent',
+   given:'Given the common tangent T₁ + T₂ and the angles I₁ and I₂, find I, θ, V₁ and V₂.',
+   inputs:[{k:'tc',label:'T₁ + T₂',min:100,max:400,step:0.1,v:180.4,unit:'m',dp:1},{k:'I1',label:'I₁',min:10,max:40,step:1,v:31,unit:'°'},{k:'I2',label:'I₂',min:10,max:40,step:1,v:36,unit:'°'}],
+   render:v=>{const I=v.I1+v.I2,th=180-I,rd=Math.PI/180,V1=v.tc*Math.sin(v.I2*rd)/Math.sin(th*rd),V2=v.tc*Math.sin(v.I1*rd)/Math.sin(th*rd);
+    return{work:`<div>I = I₁ + I₂ = ${v.I1}° + ${v.I2}° = ${I}°</div><div>θ = 180° − I = ${th}°</div><div>V₁ = (T₁+T₂) sin I₂ / sin θ = ${v.tc} sin ${v.I2}° / sin ${th}° = ${f(V1)} m</div><div>V₂ = (T₁+T₂) sin I₁ / sin θ = ${v.tc} sin ${v.I1}° / sin ${th}° = ${f(V2)} m</div>`,
+     ans:`<div>I = <b>${I}°</b> · θ = ${th}°</div><div>V₁ = <b>${f(V1)} m</b></div><div>V₂ = <b>${f(V2)} m</b></div>`,fig:triSVG(v.I1,v.I2,v.tc)}}});
+});
+
+S(`<div class="in"><div class="kick">Part A · Problem 5 of 5</div><h2>Compound curve from the tangents</h2><div id="pA5"></div></div>`,()=>{
+  problem($('#pA5'),{id:'a5',tag:'Interactive',title:'Illustrative problem: compute R, T, V, L_L and the stations',
+   given:'Two tangents intersect at station 2+550. A compound curve laid on them has I₁ = 31°, I₂ = 36°, D₁ = 3° and D₂ = 5°. Find R₁, R₂, I, T₁, T₂, V₁, V₂, L_L, and the stations of the PC, PCC and PT. Degree of curve is taken on the 20 m arc basis, R = 1145.916 / D.',
+   inputs:[{k:'pi',label:'Sta. PI (m)',min:1000,max:5000,step:10,v:2550,unit:'m',dp:0},{k:'I1',label:'I₁',min:10,max:40,step:1,v:31,unit:'°'},{k:'I2',label:'I₂',min:10,max:40,step:1,v:36,unit:'°'},{k:'D1',label:'D₁',min:1,max:10,step:0.5,v:3,unit:'°',dp:1},{k:'D2',label:'D₂',min:1,max:10,step:0.5,v:5,unit:'°',dp:1}],
+   render:v=>{const c=CALC.tan3(v.pi,v.I1,v.I2,v.D1,v.D2),d=(x)=>f(x,2);
+    const w=[`<div>R₁ = 1145.916 / D₁ = 1145.916 / ${f(v.D1,1)} = ${d(c.R1)} m</div>`,
+     `<div>R₂ = 1145.916 / D₂ = 1145.916 / ${f(v.D2,1)} = ${d(c.R2)} m</div>`,
+     `<div>I = I₁ + I₂ = ${v.I1}° + ${v.I2}° = ${c.I}°,  θ = 180° − I = ${c.th}°</div>`,
+     `<div>T₁ = R₁ tan(I₁/2) = ${d(c.R1)} tan(${v.I1/2}°) = ${d(c.T1)} m</div>`,
+     `<div>T₂ = R₂ tan(I₂/2) = ${d(c.R2)} tan(${v.I2/2}°) = ${d(c.T2)} m</div>`,
+     `<div>V₁ = (T₁+T₂) sin I₂ / sin θ = ${d(c.T1+c.T2)} sin ${v.I2}° / sin ${c.th}° = ${d(c.V1)} m</div>`,
+     `<div>V₂ = (T₁+T₂) sin I₁ / sin θ = ${d(c.T1+c.T2)} sin ${v.I1}° / sin ${c.th}° = ${d(c.V2)} m</div>`,
+     `<div>T₁+V₁ = ${d(c.a)} m,  T₂+V₂ = ${d(c.b)} m</div>`,
+     `<div>L_L = √[(${d(c.a)})² + (${d(c.b)})² − 2(${d(c.a)})(${d(c.b)}) cos ${c.th}°] = ${d(c.LL)} m</div>`,
+     `<div>β = sin⁻¹[(T₂+V₂) sin θ / L_L] = ${d(c.beta)}°,  φ = sin⁻¹[(T₁+V₁) sin θ / L_L] = ${d(c.phi)}°, β + φ = ${d(c.beta+c.phi)}° = I ✓</div>`,
+     `<div>S꜀₁ = R₁ I₁ π/180 = ${d(c.R1)}(${v.I1}° × π/180) = ${d(c.S1)} m</div>`,
+     `<div>S꜀₂ = R₂ I₂ π/180 = ${d(c.R2)}(${v.I2}° × π/180) = ${d(c.S2)} m</div>`,
+     `<div>Sta. PC = Sta. PI − (T₁+V₁) = ${stn(v.pi)} − ${d(c.a)} = ${stn(c.pc)}</div>`,
+     `<div>Sta. PCC = Sta. PC + S꜀₁ = ${stn(c.pc)} + ${d(c.S1)} = ${stn(c.pcc)}</div>`,
+     `<div>Sta. PT = Sta. PCC + S꜀₂ = ${stn(c.pcc)} + ${d(c.S2)} = ${stn(c.pt)}</div>`];
+    return{work:w.join(''),
+     ans:`<div>R₁ = <b>${d(c.R1)} m</b> · R₂ = <b>${d(c.R2)} m</b> · I = <b>${c.I}°</b></div><div>T₁ = ${d(c.T1)} · T₂ = ${d(c.T2)} · V₁ = ${d(c.V1)} · V₂ = ${d(c.V2)} m</div><div>L_L = <b>${d(c.LL)} m</b></div><div>PC <b>${stn(c.pc)}</b> · PCC <b>${stn(c.pcc)}</b> · PT <b>${stn(c.pt)}</b></div>`,
+     fig:compoundSVG(c.R1,v.I1,c.R2,v.I2,null,{noghost:1,sc:1,T1:4,T2:5,V1:6,V2:7,PI:8,LL:9,L1:11,L2:12,PC:13,PCC:14,PT:15,stn:{PC:stn(c.pc),PCC:stn(c.pcc),PT:stn(c.pt)}})}}});
 });
 
 S(`<div class="in"><div class="kick">Part A · Check yourself</div><h2>Mini quiz</h2>
@@ -521,7 +614,7 @@ S(`<div class="in"><div class="kick">Part B · Problem 2 of 3</div><h2>The cross
    render:v=>{const d=[0,1,2,3,4,5].map(k=>v['d'+k]);Object.assign(HY,{d,a:v.a,i:v.i});
     const r=CALC.stream(d,HY.v,v.a,v.i);
     const w=r.A.map((A,k)=>{const l=r.l[k];return`<div>A<sub>${NAMES[k]}</sub> = ${k===0?`½(${l})(${f(d[0],1)})`:k===6?`½(${l})(${f(d[5],1)})`:`½(${l})(${f(d[k-1],1)} + ${f(d[k],1)})`} = ${f(A)} m²</div>`}).join('');
-    return{work:w,ans:`<div>A = ΣA = <b>${f(r.At)} m²</b></div><div>Width = ${r.W} m</div>`,fig:crossSection(d,r.l,r.W)}}});
+    return{work:w,ans:`<div>A = ΣA = <b>${f(r.At)} m²</b></div><div>Width = ${r.W} m</div>`,fig:crossSection(d,r.l,r.W,r.A)}}});
 });
 
 S(`<div class="in"><div class="kick">Part B · Problem 3 of 3</div><h2>Discharge of the stream</h2><div id="pB3"></div></div>`,()=>{
@@ -531,7 +624,7 @@ S(`<div class="in"><div class="kick">Part B · Problem 3 of 3</div><h2>Discharge
    render:v=>{const vv=[0,1,2,3,4,5,6].map(k=>v['v'+k]);
     const r=CALC.stream(HY.d,vv,HY.a,HY.i);
     const w=r.q.map((q,k)=>`<div>q<sub>${NAMES[k]}</sub> = ${f(r.A[k])} × ${f(vv[k],2)} = ${f(q)} m³/s</div>`).join('');
-    return{work:w,ans:`<div>Q = Σq = <b>${f(r.Q,1)} m³/s</b></div><div>Mean velocity = Q/A = ${f(r.vm)} m/s</div>`,fig:barChart(r.q,NAMES,'m³/s')}}});
+    return{work:w,ans:`<div>Q = Σq = <b>${f(r.Q,1)} m³/s</b></div><div>Mean velocity = Q/A = ${f(r.vm)} m/s</div>`,fig:barChart(r.q,NAMES,'m³/s',true)}}});
 });
 
 S(`<div class="in"><div class="kick">Summary</div><h2>Formula sheet</h2><div class="grid2"><div><h3>Compound curve</h3><div class="formula"><div>I = I₁ + I₂</div><div>T = R tan(I/2) for each arc</div><div>L = R I (radians)</div><div>LC = 2R sin(I/2)</div><div>PCC = PC + L₁</div><div>PT = PCC + L₂</div><div>δ = l / 2R · chord = 2R sin(Δl / 2R)</div></div></div><div><h3>Stream gaging (Lab 9)</h3><div class="formula"><div>A = ½ l (d₁ + d₂), end triangles ½ l d</div><div>q = A v</div><div>Q = Σ q</div><div>v̄ = Q / A</div><div>1 fathom = 6 ft = 1.8288 m</div></div></div></div><p class="note">Source notes: Lab 10 gives the simple-curve elements and chord deflection method; the class slides only define the compound curve, so each arc is worked with the same formulas. Lab 9 supplies the stream formulas. The sample soundings and velocities (1.2 m to 0.9 m, 0.75 to 0 m/s) come from the earlier edition of the lab sheet; the 2025-2026 sheet leaves its data tables blank, so your instructor supplies the numbers.</p></div>`);
