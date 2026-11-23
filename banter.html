@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Banter Coach</title>
+<style>
+:root{--bg:#0e0f14;--panel:#171922;--panel2:#1f2230;--ink:#eceef6;--mut:#8b90a6;--line:#2a2e40;--me:#ff4f8b;--them:#2b2f42;--pass:#35d49a;--weak:#ffb84d;--dead:#ff5d5d;--acc:#ff4f8b}
+@media (prefers-color-scheme:light){:root{--bg:#f3f4f8;--panel:#fff;--panel2:#f0f1f6;--ink:#161824;--mut:#666b80;--line:#dde0ea;--them:#e6e8f0}}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+#app{max-width:520px;margin:0 auto;height:100dvh;display:flex;flex-direction:column;padding:0 16px}
+header{display:flex;align-items:center;gap:10px;padding:14px 0 10px}
+header h1{font-size:18px;margin:0;flex:1}
+.pill{background:var(--panel);border:1px solid var(--line);border-radius:99px;padding:4px 10px;font-size:13px;color:var(--mut);white-space:nowrap}
+.xp{height:6px;background:var(--panel2);border-radius:9px;overflow:hidden;margin-bottom:10px}
+.xp i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),#ffb84d);width:0;transition:width .5s}
+main{flex:1;overflow:auto;padding-bottom:12px;-webkit-overflow-scrolling:touch}
+button{font:inherit;color:inherit;cursor:pointer}
+.btn{background:var(--acc);color:#fff;border:0;border-radius:12px;padding:12px 16px;font-weight:600}
+.btn.ghost{background:var(--panel2);color:var(--ink);border:1px solid var(--line)}
+.btn:disabled{opacity:.5;cursor:default}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;margin:0 0 12px}
+.stage{display:flex;gap:12px;align-items:center;text-align:left;width:100%}
+.stage.lock{opacity:.45;cursor:not-allowed}
+.stage b{display:block}.stage small{color:var(--mut)}
+.num{width:38px;height:38px;border-radius:12px;background:var(--panel2);display:grid;place-items:center;font-weight:700;flex:none}
+.bar{height:5px;background:var(--panel2);border-radius:9px;margin-top:8px;overflow:hidden}.bar i{display:block;height:100%;background:var(--pass)}
+.chat{display:flex;flex-direction:column;gap:8px;padding:6px 0}
+.b{max-width:82%;padding:9px 13px;border-radius:18px;word-wrap:break-word;animation:pop .25s}
+.b.them{background:var(--them);align-self:flex-start;border-bottom-left-radius:5px}
+.b.me{background:var(--me);color:#fff;align-self:flex-end;border-bottom-right-radius:5px}
+.b.typing{color:var(--mut)}
+@keyframes pop{from{transform:translateY(6px);opacity:0}to{transform:none;opacity:1}}
+.note{font-size:13px;color:var(--mut);margin:4px 0 8px}
+.verdict{border-left:5px solid var(--mut)}
+.verdict.Pass{border-color:var(--pass)}.verdict.Weak{border-color:var(--weak)}.verdict.DeadEnd{border-color:var(--dead)}
+.vh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
+.vh b{font-size:20px}.Pass .vh b{color:var(--pass)}.Weak .vh b{color:var(--weak)}.DeadEnd .vh b{color:var(--dead)}
+.rw{background:var(--panel2);border-radius:10px;padding:8px 10px;margin-top:6px;font-size:14px}
+.flags span{display:inline-block;font-size:12px;background:var(--panel2);border:1px solid var(--line);border-radius:99px;padding:1px 8px;margin:6px 4px 0 0;color:var(--mut)}
+footer{padding:10px 0 calc(10px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
+.row{display:flex;gap:8px}
+textarea{flex:1;resize:none;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:14px;padding:10px 12px;font:inherit;max-height:110px}
+.tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;background:var(--panel2);color:var(--mut);margin-right:6px}
+.tag.boss{background:#5a1f3a;color:#ffd0e2}
+.err{color:var(--dead)}
+.stats span{display:inline-block;margin:3px 6px 0 0}
+a{color:var(--acc)}
+</style>
+</head>
+<body>
+<div id="app">
+  <header><h1 id="ttl">Banter Coach</h1><span class="pill" id="streak"></span><span class="pill" id="lvl"></span></header>
+  <div class="xp"><i id="xp"></i></div>
+  <main id="main"></main>
+  <footer id="foot" hidden>
+    <div class="row"><textarea id="inp" rows="1" maxlength="300" placeholder="Type your reply…"></textarea><button class="btn" id="send">Send</button></div>
+  </footer>
+</div>
+<script>
+'use strict';
+const qs=new URLSearchParams(location.search);
+if(qs.get('api')){try{localStorage.setItem('bc_api',qs.get('api'))}catch(e){}}
+const API=(()=>{try{return localStorage.getItem('bc_api')}catch(e){return null}})()||'https://notified-tenant-cyber-sunny.trycloudflare.com';
+
+/* ---------- content ---------- */
+const STAGES=[
+ {n:1,name:'The Pivot',sub:'Stop agreeing, advising, interviewing. Tease, exaggerate.',need:3,
+  rules:'No safe small talk, no interview questions, no tips, no "same".',
+  sc:[
+   ['Honestly just surviving on iced coffee and spreadsheets at this point lol'],
+   ['Nothing crazy, probably just going to rot on my couch and rewatch The Office for the millionth time'],
+   ['Attempted homemade pasta from scratch and honestly my kitchen looks like a crime scene right now'],
+   ['Woke up at noon and currently debating if cereal counts as a real lunch'],
+   ['Just got back from the gym, my legs are jelly'],
+   ['Binge-watching a baking show instead of doing laundry'],
+   ['I need like three alarms to get up in the morning, it\'s embarrassing'],
+   ['My dog just stole my sandwich off the counter and he is not sorry']],
+  boss:['I swear I\'m a great cook, I just burn everything. Last night was a smoke alarm situation']},
+ {n:2,name:'The Frame',sub:'Create "us" energy: hypotheticals, compatibility tests, specific compliments.',need:3,
+  rules:'Put the two of you in a scenario. Be specific. No generic "you\'re so pretty".',
+  sc:[
+   ['I\'m the type who always has a playlist for every mood lol'],
+   ['Planning a trip to Japan next year, I have 47 tabs open'],
+   ['I\'m weirdly competitive at board games, fair warning'],
+   ['Honestly I\'d live on tacos if I could'],
+   ['I always get the window seat on planes, non-negotiable'],
+   ['I\'m the friend who gets everyone lost on road trips']],
+  boss:['Okay settle this: pineapple on pizza, yes or no? Be careful, I\'m judging you']},
+ {n:3,name:'The Close',sub:'Turn banter into a confident, low-pressure invitation.',need:3,
+  rules:'Specific, easy to say yes to, not hesitant, not needy. Say something they can answer.',
+  sc:[
+   ['lol okay you\'re funny. we\'ve been texting for a week and I still don\'t know what you look like in 3D'],
+   ['I\'ve been craving a really good taco all day and nobody here knows where to go'],
+   ['This thread is the best part of my day, no pressure lol'],
+   ['Ugh I need to get out of the house this weekend. Any ideas?'],
+   ['That coffee place you mentioned sounds amazing'],
+   ['We should probably stop texting and just prove we\'re this funny in real life']],
+  boss:['Okay the banter is strong. Now I\'m curious if you\'re this good in person']}
+];
+const HINTS={1:'Accuse them of something absurd. Exaggerate. Flip the blame.',2:'Drop both of you into a tiny scenario ("we\'d…").',3:'Name a place and a time, keep it light.'};
+
+/* ---------- state ---------- */
+let S=load();
+function load(){try{const j=JSON.parse(localStorage.getItem('bc_state'));if(j)return j}catch(e){}return{xp:0,streak:0,best:0,done:{1:[],2:[],3:[]},boss:{},flags:{},tries:0,passes:0}}
+function save(){try{localStorage.setItem('bc_state',JSON.stringify(S))}catch(e){}}
+const $=s=>document.querySelector(s);
+const main=$('#main'),foot=$('#foot'),inp=$('#inp'),send=$('#send');
+let cur=null;  // {stage,i,thread,boss,turn,fails,passes,busy}
+
+function level(){return 1+Math.floor(S.xp/100)}
+function hud(){$('#streak').textContent='🔥 '+S.streak;$('#lvl').textContent='Lv '+level();$('#xp').style.width=(S.xp%100)+'%'}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function unlocked(n){return n===1||(S.boss[n-1]===true)}
+
+/* ---------- menu ---------- */
+function menu(){
+  cur=null;foot.hidden=true;$('#ttl').textContent='Banter Coach';hud();
+  let h='<p class="note">A blunt coach grades your texts. Earn passes, beat the rally, advance.</p>';
+  for(const st of STAGES){
+    const d=S.done[st.n].length,lock=!unlocked(st.n);
+    h+=`<button class="card stage ${lock?'lock':''}" data-s="${st.n}"><span class="num">${lock?'🔒':st.n}</span><span style="flex:1"><b>${st.name}</b><small>${st.sub}</small><div class="bar"><i style="width:${Math.min(100,d/st.need*100)}%"></i></div><small>${d}/${st.need} passes${S.boss[st.n]?' · rally cleared ✓':''}</small></span></button>`;
+  }
+  const fl=Object.entries(S.flags).sort((a,b)=>b[1]-a[1]).slice(0,4);
+  h+=`<div class="card stats"><b>Your habits</b><br>${fl.length?fl.map(([k,v])=>`<span class="tag">${esc(k)} ×${v}</span>`).join(''):'<small class="note">Play a few texts to see what you keep doing wrong.</small>'}<div class="note">${S.passes} passes / ${S.tries} tries · best streak ${S.best}</div></div>`;
+  h+=`<p class="note">Coach server: <span id="srv">checking…</span></p><button class="btn ghost" id="rst">Reset progress</button>`;
+  main.innerHTML=h;
+  main.querySelectorAll('.stage').forEach(b=>b.onclick=()=>{const n=+b.dataset.s;if(unlocked(n))stageMenu(n)});
+  $('#rst').onclick=()=>{if(confirm('Reset all progress?')){S={xp:0,streak:0,best:0,done:{1:[],2:[],3:[]},boss:{},flags:{},tries:0,passes:0};save();menu()}};
+  fetch(API+'/health').then(r=>r.json()).then(()=>{$('#srv').textContent='online ✓'}).catch(()=>{$('#srv').innerHTML='<span class="err">offline — the host machine is asleep or LM Studio is off</span>'});
+}
+
+function stageMenu(n){
+  const st=STAGES[n-1];$('#ttl').textContent='Stage '+n+' · '+st.name;
+  let h=`<p class="note">${st.rules}</p>`;
+  st.sc.forEach((s,i)=>{const dn=S.done[n].includes(i);h+=`<button class="card stage" data-i="${i}"><span class="num">${dn?'✓':i+1}</span><span style="flex:1"><b>"${esc(s[0].slice(0,60))}${s[0].length>60?'…':''}"</b></span></button>`});
+  const ready=S.done[n].length>=st.need;
+  h+=`<button class="card stage ${ready?'':'lock'}" id="bossb"><span class="num">⚔</span><span><b>Rally (boss)</b><small>${ready?'Hold the bit for 4 texts. 2 misses and you\'re out.':'Needs '+st.need+' passes first.'}</small></span></button><button class="btn ghost" id="back">← Stages</button>`;
+  main.innerHTML=h;
+  main.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>play(n,+b.dataset.i));
+  $('#bossb').onclick=()=>{if(ready)rally(n)};$('#back').onclick=menu;
+}
+
+/* ---------- play ---------- */
+function bubble(who,t,cls=''){const d=document.createElement('div');d.className='b '+who+' '+cls;d.textContent=t;$('#chat').appendChild(d);main.scrollTop=main.scrollHeight;return d}
+function shell(title,tags){
+  $('#ttl').textContent=title;foot.hidden=false;
+  main.innerHTML=`<div class="note">${tags}<button class="btn ghost" id="exit" style="padding:2px 10px;float:right">Exit</button></div><div class="chat" id="chat"></div><div id="res"></div>`;
+  $('#exit').onclick=()=>stageMenu(cur.stage);inp.value='';inp.focus();
+}
+function play(n,i){
+  const st=STAGES[n-1];cur={stage:n,i,thread:[{who:'them',t:st.sc[i][0]}],boss:false,busy:false};
+  shell('Stage '+n,`<span class="tag">Stage ${n}</span>${esc(st.rules)}`);
+  bubble('them',st.sc[i][0]);
+}
+function rally(n){
+  const st=STAGES[n-1],o=st.boss[0];cur={stage:n,i:-1,thread:[{who:'them',t:o}],boss:true,turn:0,fails:0,passes:0,busy:false};
+  shell('Rally · '+st.name,'<span class="tag boss">BOSS</span>4 texts. Keep the bit alive.');
+  bubble('them',o);
+}
+
+async function post(path,body){
+  const r=await fetch(API+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error||('HTTP '+r.status))}
+  return r.json();
+}
+
+async function submit(){
+  const t=inp.value.trim();if(!t||!cur||cur.busy)return;
+  cur.busy=true;send.disabled=true;inp.value='';$('#res').innerHTML='';
+  bubble('me',t);
+  const ty=bubble('them','coach is reading…','typing');
+  try{
+    const j=await post('/judge',{stage:cur.stage,thread:cur.thread,reply:t,rally:cur.boss});
+    cur.thread.push({who:'me',t});ty.remove();
+    S.tries++;(j.flags||[]).forEach(f=>S.flags[f]=(S.flags[f]||0)+1);
+    const pass=j.verdict==='Pass';
+    if(pass){S.streak++;S.best=Math.max(S.best,S.streak);S.passes++;S.xp+=10+Math.min(S.streak,5)*2}else{S.streak=0;S.xp+=2}
+    card(j);
+    if(cur.boss)await bossTurn(pass);else await plainTurn(pass);
+    save();hud();
+  }catch(e){
+    ty.remove();inp.value=t;$('#chat').lastChild.remove();
+    $('#res').innerHTML=`<div class="card err">Couldn't reach the coach (${esc(e.message)}). The host machine may be offline. Try again.</div>`;
+  }
+  cur.busy=false;send.disabled=false;inp.focus();
+}
+function card(j){
+  const k=j.verdict.replace(' ','');
+  $('#res').insertAdjacentHTML('beforeend',`<div class="card verdict ${k}"><div class="vh"><b>${esc(j.verdict)}</b><span class="note">${j.score}/100</span></div><div>${esc(j.diagnosis)}</div>${(j.rewrites||[]).map(r=>`<div class="rw">💡 ${esc(r)}</div>`).join('')}<div class="flags">${(j.flags||[]).map(f=>`<span>${esc(f)}</span>`).join('')}</div></div>`);
+  main.scrollTop=main.scrollHeight;
+}
+async function plainTurn(pass){
+  const n=cur.stage,i=cur.i,st=STAGES[n-1];
+  if(pass){
+    const first=!S.done[n].includes(i);if(first){S.done[n].push(i)}
+    const left=Math.max(0,st.need-S.done[n].length);
+    $('#res').insertAdjacentHTML('beforeend',`<div class="card"><b>Passed.</b> ${left?left+' more pass'+(left>1?'es':'')+' to unlock the rally.':'Rally unlocked!'}<div class="row" style="margin-top:10px"><button class="btn" id="nx">Next text</button><button class="btn ghost" id="bk">Stage menu</button></div></div>`);
+    $('#nx').onclick=()=>play(n,nextIdx(n,i));$('#bk').onclick=()=>stageMenu(n);
+    foot.hidden=true;
+  }else{
+    $('#res').insertAdjacentHTML('beforeend',`<div class="note">Retry the same text. ${HINTS[n]}</div>`);
+    cur.thread=cur.thread.slice(0,1);
+    document.querySelectorAll('.b.me').forEach(b=>b.style.opacity=.45);
+  }
+  main.scrollTop=main.scrollHeight;
+}
+function nextIdx(n,i){const st=STAGES[n-1];for(let k=1;k<=st.sc.length;k++){const j=(i+k)%st.sc.length;if(!S.done[n].includes(j))return j}return (i+1)%st.sc.length}
+async function bossTurn(pass){
+  cur.turn++;if(pass)cur.passes++;else cur.fails++;
+  const n=cur.stage;
+  if(cur.fails>=2||cur.turn>=4||cur.passes>=3){
+    const win=cur.passes>=3||(cur.turn>=4&&cur.fails<2&&cur.passes>=2);
+    if(win){S.boss[n]=true;S.xp+=40}
+    foot.hidden=true;
+    $('#res').insertAdjacentHTML('beforeend',`<div class="card"><b>${win?'Rally won. '+(n<3?'Next stage unlocked.':'You finished the course.'):'Rally lost.'}</b> ${cur.passes} pass${cur.passes==1?'':'es'}, ${cur.fails} miss${cur.fails==1?'':'es'}.<div class="row" style="margin-top:10px">${win?'':'<button class="btn" id="rt">Try again</button>'}<button class="btn ghost" id="bk">Stage menu</button></div></div>`);
+    if(!win)$('#rt').onclick=()=>rally(n);$('#bk').onclick=()=>n<3&&win?menu():stageMenu(n);
+    return;
+  }
+  const ty=bubble('them','…','typing');
+  try{const r=await post('/reply',{thread:cur.thread});ty.remove();cur.thread.push({who:'them',t:r.text});bubble('them',r.text)}
+  catch(e){ty.remove();bubble('them','(lost signal)')}
+  $('#res').insertAdjacentHTML('beforeend',`<div class="note">Turn ${cur.turn}/4 · ${cur.passes} pass, ${cur.fails} miss. Keep the bit going, don't retreat to questions.</div>`);
+}
+
+send.onclick=submit;
+inp.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submit()}});
+menu();
+</script>
+</body>
+</html>
