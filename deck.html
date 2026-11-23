@@ -94,6 +94,20 @@ tr.rvn td{background:color-mix(in srgb,var(--accent) 24%,transparent)}
 .out.wide{grid-template-columns:1.55fr 1fr}
 @media (max-width:900px){.work.cols{column-count:1}.out.wide{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){.work div .sb,.work div .rs{transition:none}}
+.known{display:none;margin-top:12px;padding-top:8px;border-top:2px solid var(--line);font-size:.82rem;color:var(--muted)}
+.prob.focusing .known{display:block}
+.known>b{display:block;font-family:ui-monospace,Consolas,monospace;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:4px}
+.known .kc{display:inline-block;margin:2px 10px 2px 0;padding:1px 8px;border:1px solid var(--line);background:var(--paper2);color:var(--ink);font-family:Cambria,'Times New Roman',serif}
+.prob.focusing .work.focus>div{display:none}
+.prob.focusing .work.focus>div.cur{display:block;font-size:1.5rem;line-height:1.6;margin-top:10px;opacity:1;transform:none;outline:none;background:none}
+.work.focus .cur .fm{font-size:.82em;animation:fin .5s ease both}
+.work.focus .cur .sb{display:block;margin:6px 0 0 .6em;animation:fin .5s ease .7s both}
+.work.focus .cur .rs{display:block;margin:6px 0 0 .6em;font-size:1.2em;color:var(--accent);animation:fin .5s ease 1.4s both}
+@keyframes fin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.work.cols.focus{column-count:1}
+.prob.focusing .out.wide{grid-template-columns:1fr 1.1fr}
+.prob.focusing svg.plot{max-height:62vh}
+@media (prefers-reduced-motion:reduce){.work.focus .cur .fm,.work.focus .cur .sb,.work.focus .cur .rs{animation:none}}
 .stmt{border-left:6px solid var(--accent);background:var(--paper2);padding:8px 14px;margin:8px 0;font-size:1.05rem}
 .stmt div+div{margin-top:4px}
 .stmt b{font-family:ui-monospace,Consolas,monospace;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-right:6px}
@@ -128,7 +142,7 @@ const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelect
 const D2R=Math.PI/180;
 const f=(x,n=2)=>(+x).toFixed(n);
 /* one worked line: the formula first, then the substitution, then the result */
-const ln=(fm,sb,rs)=>`<div><span class="fm">${fm}</span>${sb!=null?`<span class="sb">= ${sb}</span>`:''}<span class="rs">${sb!=null?'= ':''}${rs}</span></div>`;
+const ln=(fm,sb,rs,key)=>`<div${key?` data-k="${key}"`:''}><span class="fm">${fm}</span>${sb!=null?`<span class="sb">= ${sb}</span>`:''}<span class="rs">${sb!=null?'= ':''}${rs}</span></div>`;
 function stn(m){const k=Math.floor(m/1000+1e-9),r=m-k*1000;return k+'+'+(r<10?'00':r<100?'0':'')+r.toFixed(2)}
 function dms(deg){let s=Math.round(deg*3600);const d=Math.floor(s/3600);s-=d*3600;const m=Math.floor(s/60);s-=m*60;return d+'°'+String(m).padStart(2,'0')+'′'+String(s).padStart(2,'0')+'″'}
 
@@ -159,7 +173,7 @@ function problem(host,spec){
   host.classList.add('prob');
   host.innerHTML=`<span class="tag">${spec.tag}</span> <b>${spec.title}</b><div class="stmt"><div><b>Given</b> ${spec.given}</div><div><b>Find</b> ${spec.find}</div></div>
   <div class="ctl">${spec.inputs.map(x=>`<div><label for="${spec.id}-${x.k}">${x.label}<b id="${spec.id}-${x.k}-v"></b></label><input type="range" id="${spec.id}-${x.k}" min="${x.min}" max="${x.max}" step="${x.step}" value="${x.v}"></div>`).join('')}</div>
-  <div class="out${spec.cols?' wide':''}"><div><p class="hint" id="${spec.id}-h">The solution is hidden. Press ▶ Play steps to watch it unfold, or Next step › to reveal one line at a time. Change the given values first if you like.</p><div class="work${spec.cols?' cols':''}" id="${spec.id}-w"></div><div class="ans" id="${spec.id}-a"></div></div><div id="${spec.id}-f"></div></div>
+  <div class="out${spec.cols?' wide':''}"><div><p class="hint" id="${spec.id}-h">The solution is hidden. Press → (or Next step ›) to reveal one line at a time, or ▶ Play steps to watch it unfold. ← steps back. Change the given values first if you like.</p><div class="work${spec.cols?' cols':''}" id="${spec.id}-w"></div><div class="known" id="${spec.id}-k"></div><div class="ans" id="${spec.id}-a"></div></div><div id="${spec.id}-f"></div></div>
   <p class="steps"><button type="button" class="btn pri" id="${spec.id}-p">▶ Play steps</button><button type="button" class="btn" id="${spec.id}-n">Next step ›</button><button type="button" class="btn" id="${spec.id}-r">Reset to lab values</button><span class="cnt" id="${spec.id}-c"></span></p>`;
   let shown=0,timer=null; /* shown = number of working lines revealed; 0 = solution hidden, null = everything */
   const W=()=>$('#'+spec.id+'-w'),A=()=>$('#'+spec.id+'-a'),F=()=>$('#'+spec.id+'-f');
@@ -167,13 +181,22 @@ function problem(host,spec){
   const paint=(flash)=>{const L=[...W().children];L.forEach(d=>d.classList.add('st'));
     const n=shown===null?L.length:shown;
     L.forEach((d,k)=>{d.classList.toggle('hid',k>=n);d.classList.toggle('now',shown!==null&&k===n-1)});
+    const focus=!!spec.focus&&shown!==null&&shown>=1;
+    host.classList.toggle('focusing',focus);W().classList.toggle('focus',focus);
+    L.forEach((d,k)=>d.classList.toggle('cur',focus&&k===n-1));
+    const K=$('#'+spec.id+'-k');K.innerHTML=focus&&n>1?'<b>Solved so far</b> '+L.slice(0,n-1).map(d=>{const fmx=d.querySelector('.fm').textContent;const lab=d.dataset.k||fmx.split('=')[0].trim();const val=d.querySelector('.rs').textContent.replace(/^=\s*/,'').replace(/\s*\(.*$/,'');return `<span class="kc">${lab} = <b>${val}</b></span>`}).join(''):'';
     const done=n>=L.length;A().classList.toggle('hid',!done);F().querySelectorAll('[data-s]').forEach(e=>{const k=+e.dataset.s;e.classList.toggle('rvh',k>n);e.classList.toggle('rvn',shown!==null&&k===n)});
     $('#'+spec.id+'-h').hidden=shown!==0;$('#'+spec.id+'-c').textContent=shown===null?'':(shown===0?'solution hidden':(done?'all '+L.length+' steps':'step '+n+' of '+L.length));
     if(done&&flash){A().classList.remove('pop');void A().offsetWidth;A().classList.add('pop')}};
   const stop=()=>{clearTimeout(timer);timer=null};
   const play=()=>{stop();shown=0;paint();if(calm){shown=null;paint(true);return}
-    const tick=()=>{const L=W().children.length;shown++;paint(true);if(shown<=L)timer=setTimeout(tick,shown===L?900:1900);else{shown=null;paint(false)}};timer=setTimeout(tick,350)};
+    const tick=()=>{const L=W().children.length;shown++;paint(true);if(shown<=L)timer=setTimeout(tick,shown===L&&!spec.focus?900:1900);else{shown=null;paint(false)}};timer=setTimeout(tick,350)};
   const next=()=>{stop();const L=W().children.length;if(shown===null)shown=0;shown++;if(shown>L){shown=null}paint(true)};
+  /* arrow keys: step the solution first, change slide only when there is nothing left to step */
+  host._step=dir=>{const L=W().children.length;
+    if(dir>0){if(shown===null)return false;if(shown>=L){if(!spec.focus)return false;stop();shown=null;paint(true);return true}stop();shown++;paint(true);return true}
+    if(shown===null){stop();shown=spec.focus?L:L-1;paint(false);return true}
+    if(shown>0){stop();shown--;paint(false);return true}return false};
   host.addEventListener('enter',()=>{stop();shown=0;paint(false)}); /* every visit starts with the solution hidden; Play steps is manual */
   const upd=()=>{spec.inputs.forEach(x=>{vals[x.k]=+$('#'+spec.id+'-'+x.k).value;$('#'+spec.id+'-'+x.k+'-v').textContent=f(vals[x.k],x.dp??(x.step<1?2:0))+(x.unit?' '+x.unit:'')});
     const r=spec.render(vals);W().innerHTML=r.work;A().innerHTML=r.ans;F().innerHTML=r.fig||'';paint(false)};
@@ -235,6 +258,18 @@ function compoundSVG(R1,I1,R2,I2,hl,ref){
     if(ref.V2!==undefined)refx+=grp(ref.V2,seg(PI2,PIv,'var(--c1)')+lab(at(PI2,PIv,out(a2),fs*1.5),'V₂','var(--c1)')+leg('V2','var(--c1)',false,`V₂ = ${f(V2g)} m`));
     if(ref.PI!==undefined)refx+=grp(ref.PI,pi(PIv,'PI')+leg('TV1','var(--ink)',false,`T₁+V₁ = ${f(A1.t+V1g)} m`)+leg('TV2','var(--ink)',false,`T₂+V₂ = ${f(A2.t+V2g)} m`));
     if(ref.LL!==undefined)refx+=grp(ref.LL,seg(P0,P2,'var(--muted)',true)+lab(at(P0,P2,[Math.sin(Math.atan2(P2[1],P2[0])),-Math.cos(Math.atan2(P2[1],P2[0]))],fs*-1.6),'L_L','var(--muted)')+leg('LL','var(--muted)',true,`L_L = ${f(Math.hypot(P2[0],P2[1]))} m`));
+    if(ref.stk){ /* staking out: stakes, sight lines from the instrument and chords */
+      const {t1,t2}=ref.stk,rad=Math.max(w,h)*.13;
+      const q1=t1.slice(1).map(r=>{const p=(r.sta-t1[0].sta)/R1;return{r,p:[R1*Math.sin(p),R1*(1-Math.cos(p))]}});
+      const q2=t2.slice(1).map(r=>{const u=a1+(r.sta-t2[0].sta)/R2;return{r,p:[O2[0]+R2*Math.sin(u),O2[1]-R2*Math.cos(u)]}});
+      const dot=(p,col)=>`<circle cx="${f(p[0],1)}" cy="${f(-p[1],1)}" r="${f(fs*.28,1)}" fill="${col}"/>`;
+      const wedgeAt=(O,a0,a1_,txt,col,k)=>{const m=(a0+a1_)/2,rr=rad*k,q=a=>[O[0]+rr*Math.cos(a),O[1]+rr*Math.sin(a)],lp=[O[0]+rr*1.18*Math.cos(m),O[1]+rr*1.18*Math.sin(m)];return `<path d="M${P(q(a0))} A${rr} ${rr} 0 0 0 ${P(q(a1_))}" fill="none" stroke="${col}" stroke-width="3.5" vector-effect="non-scaling-stroke"/><text x="${f(lp[0],1)}" y="${f(-lp[1]-fs*(k>1?1.2:.2),1)}" font-size="${f(fs*.72,1)}" fill="${col}" text-anchor="${lp[0]>(x0+x1)/2?'end':'start'}" style="paint-order:stroke;stroke:var(--paper2);stroke-width:4px;stroke-linejoin:round">${txt}</text>`};
+      const f1=q1[0],last1=q1[q1.length-1],last2=q2[q2.length-1];
+      if(ref.s1!==undefined&&f1)refx+=grp(ref.s1,seg(P0,f1.p,'var(--good)')+dot(f1.p,'var(--good)')+wedgeAt(P0,0,Math.atan2(f1.p[1],f1.p[0]),'δ = '+dms(f1.r.defl),'var(--good)',.7));
+      if(ref.s2!==undefined&&f1)refx+=grp(ref.s2,`<path d="M${P(P0)}L${P(f1.p)}" stroke="var(--bad)" stroke-width="6" opacity=".6" stroke-linecap="round" fill="none" vector-effect="non-scaling-stroke"/>`+lab(at(P0,f1.p,[0,-1],fs*1.7),f(f1.r.chord,3)+' m','var(--bad)'));
+      if(ref.s3!==undefined&&last1)refx+=grp(ref.s3,q1.map(o=>seg(P0,o.p,'var(--c1)')+dot(o.p,'var(--c1)')).join('')+`<path d="M${P(P0)}${q1.map(o=>'L'+P(o.p)).join('')}" stroke="var(--ink)" stroke-width="1.6" fill="none" vector-effect="non-scaling-stroke"/>`+wedgeAt(P0,0,Math.atan2(last1.p[1],last1.p[0]),'last δ = '+dms(last1.r.defl)+' = I₁/2','var(--c1)',1.15));
+      if(ref.s4!==undefined&&last2)refx+=grp(ref.s4,`<path d="M${P(P1)}L${P([P1[0]+rad*2*Math.cos(a1),P1[1]+rad*2*Math.sin(a1)])}" stroke="var(--muted)" stroke-width="1.6" stroke-dasharray="5 4" fill="none" vector-effect="non-scaling-stroke"/>`+q2.map(o=>seg(P1,o.p,'var(--accent)')+dot(o.p,'var(--accent)')).join('')+`<path d="M${P(P1)}${q2.map(o=>'L'+P(o.p)).join('')}" stroke="var(--ink)" stroke-width="1.6" fill="none" vector-effect="non-scaling-stroke"/>`+wedgeAt(P1,a1,a1+last2.r.defl*D2R,'last δ = '+dms(last2.r.defl)+' = I₂/2','var(--accent)',.9));
+    }
     [['PC',P0],['PCC',P1],['PT',P2]].forEach(([n,p])=>{if(ref[n]!==undefined)refx+=grp(ref[n],`<circle cx="${f(p[0],1)}" cy="${f(-p[1],1)}" r="${f(fs*1.2,1)}" fill="none" stroke="var(--good)" stroke-width="4" vector-effect="non-scaling-stroke"/>`+(ref.stn?lab([p[0],p[1]-fs*2.4],ref.stn[n],'var(--good)'):''))});
   }
   let hlx='';
@@ -546,31 +581,38 @@ S(`<div class="in"><div class="kick">Part A · Problem 3 of 5</div><h2>Staking o
     const l1=t1[t1.length-1],l2=t2[t2.length-1];
     return{work:`${ln('δ = l / 2R  (l = arc length from the start of the arc, in radians)',`${f(t1[1].sta-pc)} / 2(${v.R1})  [first stake of arc 1]`,dms(t1[1].defl))}${ln('chord = 2R sin(Δl / 2R)  (from the previous stake)',`2(${v.R1}) sin(${f(t1[1].sta-pc)} / 2(${v.R1}))`,f(t1[1].chord,3)+' m')}${ln('Arc 1: last deflection = I₁/2',dms(l1.defl),`${I1/2}° ✓`)}${ln('Arc 2: last deflection = I₂/2',dms(l2.defl),`${I2/2}° ✓`)}<div>The two arcs are staked from different set-ups (PC, then PCC).</div>`,
      ans:`<div>Arc 1: ${t1.length-1} chords from the PC</div><div>Arc 2: ${t2.length-1} chords from the PCC</div><div>(I₁ = 30°, I₂ = 40°)</div>`,
-     fig:`<div class="tablewrap"><table><tr><th>Station</th><th>Point</th><th>Deflection</th><th>Chord (m)</th></tr>${tab(t1,'PC','PCC')}<tr><th colspan="4">Set up at the PCC</th></tr>${tab(t2,'PCC','PT')}</table></div>`}}});
+     fig:compoundSVG(v.R1,I1,v.R2,I2,null,{stk:{t1,t2},s1:1,s2:2,s3:3,s4:4})+`<div class="tablewrap" style="max-height:24vh;margin-top:8px"><table><tr><th>Station</th><th>Point</th><th>Deflection</th><th>Chord (m)</th></tr>${tab(t1,'PC','PCC')}<tr><th colspan="4">Set up at the PCC</th></tr>${tab(t2,'PCC','PT')}</table></div>`}}});
 });
 
 S(`<div class="in"><div class="kick">Part A · Problem 4 of 5</div><h2>What if R₂ changes?</h2><div id="pA4"></div></div>`,()=>{
   problem($('#pA4'),{id:'a4',tag:'Interactive',title:'Sensitivity of the length',
-   given:'Arc 1: R₁ = 300 m, I₁ = 30°. Arc 2 turns I₂ = 40°. The PC is at 1+200.00.',find:'How L₂, the PT station and the total length respond as R₂ changes.',
+   given:'Arc 1: R₁ = 300 m, I₁ = 30°. Arc 2: R₂ starts at 200 m (as in Problem 1) and turns I₂ = 40°. The PC is at 1+200.00.',find:'How L₂, the PT station and the total length respond as R₂ changes.',
    inputs:[{k:'R2',label:'R₂',min:100,max:500,step:10,v:200,unit:'m'},{k:'I2',label:'I₂',min:10,max:80,step:1,v:40,unit:'°'}],
-   render:v=>{const a=CALC.arc(300,30),b=CALC.arc(v.R2,v.I2),pcc=1200+a.L,pt=pcc+b.L;
+   render:v=>{const a=CALC.arc(300,30),b=CALC.arc(v.R2,v.I2),pcc=1200+a.L,pt=pcc+b.L,rad=v.I2*Math.PI/180;
     const xs=[],ys=[];for(let r=100;r<=500;r+=20){xs.push(r);ys.push(a.L+CALC.arc(r,v.I2).L)}
-    return{work:`${ln('L₂ = R₂ I₂ (π/180)',`${v.R2}(${v.I2}° × π/180)`,f(b.L)+' m')}${ln('Sta. PT = Sta. PCC + L₂',`${f(pcc)} + ${f(b.L)}`,stn(pt))}<div>Doubling R₂ doubles L₂, because L = R I.</div>`,
-     ans:`<div>L₂ = <b>${f(b.L)} m</b></div><div>PT = <b>${stn(pt)}</b></div><div>Total L = <b>${f(a.L+b.L)} m</b></div>`,
+    return{work:`${ln('Sta. PCC = Sta. PC + L₁,  L₁ = R₁ I₁ (π/180)',`1200.00 + 300(30° × π/180)`,`1200.00 + ${f(a.L)} = ${stn(pcc)}`)}${ln('I₂ in radians = I₂ × π/180',`${v.I2}° × π/180`,f(rad,4)+' rad')}${ln('L₂ = R₂ I₂ (radians)',`R₂ × ${f(rad,4)}`,`${f(rad,4)} R₂  →  ${f(b.L)} m at R₂ = ${v.R2} m`)}${ln('Sta. PT = Sta. PCC + L₂',`${f(pcc)} + ${f(rad,4)} R₂`,`${stn(pt)} at R₂ = ${v.R2} m`)}${ln('Total L = L₁ + L₂',`${f(a.L)} + ${f(rad,4)} R₂`,`${f(a.L+b.L)} m at R₂ = ${v.R2} m`)}<div>L is a straight line in R₂: each +10 m of R₂ adds ${f(rad*10)} m, and doubling R₂ doubles L₂.</div>`,
+     ans:`<div>L₂ = <b>${f(rad,4)} R₂</b> = ${f(b.L)} m</div><div>PT = ${f(pcc)} + ${f(rad,4)} R₂ = <b>${stn(pt)}</b></div><div>Total L = ${f(a.L)} + ${f(rad,4)} R₂ = <b>${f(a.L+b.L)} m</b></div>`,
      fig:lineChart(xs,ys,v.R2,a.L+b.L,'R₂ (m)','Total L (m)',[0,900],xs.map(r=>a.L+CALC.arc(r,40).L))}}});
 });
 
-S(`<div class="in"><div class="kick">Part A · Compound curves from the tangents</div><h2>The symbols</h2><div class="grid2"><div class="card" style="font-size:.9rem"><b>PC</b> point of curvature, where the first curve leaves the first tangent<br><b>PT</b> point of tangency, where the second curve meets the second tangent<br><b>PI</b> intersection of the first and second tangents<br><b>PI₁</b> first tangent meets the common tangent<br><b>PI₂</b> common tangent meets the second tangent<br><b>PCC</b> point of compound curve, where the two curves join<br><b>I</b> intersection angle between the first and second tangents<br><b>I₁, I₂</b> intersection angles at PI₁ and PI₂<br><b>R₁, R₂</b> radius of the first and second curve<br><b>T₁+V₁</b> tangent distance on the side of the first curve<br><b>T₂+V₂</b> tangent distance on the side of the second curve<br><b>T₁+T₂</b> length of the common tangent<br><b>LC₁, LC₂</b> long chords of the two curves<br><b>S꜀₁, S꜀₂</b> lengths of the first and second curve<br><b>L_L</b> length of the common long chord</div><div><div id="symFig"></div><p class="steps"><button type="button" class="btn pri" id="sym-p">▶ Play reveal</button><button type="button" class="btn" id="sym-n">Next symbol ›</button><button type="button" class="btn" id="sym-a">Show all</button></p><p class="note" id="sym-c" style="min-height:4.2em;margin:4px 0"></p></div></div><p class="note">The figure uses the worked example that follows: I₁ = 31°, I₂ = 36°, D₁ = 3°, D₂ = 5°.</p></div>`,()=>{
+S(`<div class="in"><div class="kick">Part A · Compound curves from the tangents</div><h2>The symbols</h2><div class="grid2"><div class="card" style="font-size:.9rem"><b>PC</b> point of curvature, where the first curve leaves the first tangent<br><b>PT</b> point of tangency, where the second curve meets the second tangent<br><b>PI</b> intersection of the first and second tangents<br><b>PI₁</b> first tangent meets the common tangent<br><b>PI₂</b> common tangent meets the second tangent<br><b>PCC</b> point of compound curve, where the two curves join<br><b>I</b> intersection angle between the first and second tangents<br><b>I₁, I₂</b> intersection angles at PI₁ and PI₂<br><b>R₁, R₂</b> radius of the first and second curve<br><b>T₁+V₁</b> tangent distance on the side of the first curve<br><b>T₂+V₂</b> tangent distance on the side of the second curve<br><b>T₁+T₂</b> length of the common tangent<br><b>LC₁, LC₂</b> long chords of the two curves<br><b>S꜀₁, S꜀₂</b> lengths of the first and second curve<br><b>L_L</b> length of the common long chord</div><div data-stepper="1"><div id="symFig"></div><p class="steps"><button type="button" class="btn pri" id="sym-p">▶ Play reveal</button><button type="button" class="btn" id="sym-n">Next symbol ›</button><button type="button" class="btn" id="sym-a">Show all</button></p><p class="note" id="sym-c" style="min-height:4.2em;margin:4px 0"></p></div></div><p class="note">The figure uses the worked example that follows: I₁ = 31°, I₂ = 36°, D₁ = 3°, D₂ = 5°.</p></div>`,()=>{
   const c=CALC.tan3(2550,31,36,3,5),fig=$('#symFig');
   fig.innerHTML=compoundSVG(c.R1,31,c.R2,36,null,{noghost:1,sc:1,PC:1,T1:2,PCC:3,T2:4,PT:5,L1:6,L2:7,V1:8,V2:9,PI:10,LL:11});
   const caps=['PC · point of curvature: the first curve leaves the first tangent here.','T₁ · tangent distance of the first curve, from the PC to PI₁ and from PI₁ to the PCC. PI₁ is where the first tangent meets the common tangent.','PCC · point of compound curve: the two curves join here, on the common tangent.','T₂ · tangent distance of the second curve, from the PCC to PI₂ and from PI₂ to the PT. PI₂ is where the common tangent meets the second tangent.','PT · point of tangency: the second curve meets the second tangent.','S꜀₁ · length of the first curve.','S꜀₂ · length of the second curve.','V₁ · from PI₁ to PI, along the first tangent.','V₂ · from PI₂ to PI, along the second tangent.','PI · the first and second tangents meet. T₁+V₁ and T₂+V₂ are the tangent distances from PI back to the PC and the PT.','L_L · the common long chord, from the PC to the PT.'];
-  let n=null,tm=null;
-  const paint=()=>{const k=n===null?99:n;fig.querySelectorAll('[data-s]').forEach(e=>{const q=+e.dataset.s;e.classList.toggle('rvh',q>k);e.classList.toggle('rvn',n!==null&&q===k)});$('#sym-c').textContent=n===null?'':caps[n-1]};
+  let n=0,tm=null;
+  const HINT='Press → (or Next symbol ›) to reveal the symbols one at a time. Play reveal runs them automatically.';
+  const paint=()=>{const k=n===null?99:n;fig.querySelectorAll('[data-s]').forEach(e=>{const q=+e.dataset.s;e.classList.toggle('rvh',q>k);e.classList.toggle('rvn',n!==null&&q===k)});$('#sym-c').textContent=n===null?'':(n===0?HINT:caps[n-1])};
   const stop=()=>{clearTimeout(tm);tm=null};
   const tick=()=>{n++;if(n>caps.length){n=null;paint();return}paint();tm=setTimeout(tick,n===2||n===4||n===10?3200:2200)};
   $('#sym-p').addEventListener('click',()=>{stop();n=0;paint();tm=setTimeout(tick,500)});
   $('#sym-n').addEventListener('click',()=>{stop();n=(n===null?0:n)+1;if(n>caps.length)n=null;paint()});
   $('#sym-a').addEventListener('click',()=>{stop();n=null;paint()});
+  const host=$('#symFig').parentElement;
+  host._step=dir=>{const L=caps.length;
+    if(dir>0){if(n===null||n>=L)return false;stop();n++;paint();return true}
+    if(n===null){stop();n=L-1;paint();return true}
+    if(n>0){stop();n--;paint();return true}return false};
+  host.addEventListener('enter',()=>{stop();n=0;paint()});
   paint();});
 
 S(`<div class="in"><div class="kick">Part A · Compound curves from the tangents</div><h2>Solving the triangle PI₁–PI₂–PI</h2><p>The two tangents and the common tangent form a triangle. Its angles are I₁, I₂ and θ = 180° − I, so I = I₁ + I₂. The sine law then gives the tangent lengths V₁ and V₂ (T₁ = R₁ tan(I₁/2) and T₂ = R₂ tan(I₂/2) come from the simple curve).</p><div id="pTri"></div></div>`,()=>{
@@ -583,28 +625,28 @@ S(`<div class="in"><div class="kick">Part A · Compound curves from the tangents
 });
 
 S(`<div class="in"><div class="kick">Part A · Problem 5 of 5</div><h2>Compound curve from the tangents</h2><div id="pA5"></div></div>`,()=>{
-  problem($('#pA5'),{id:'a5',cols:true,tag:'Interactive',title:'Illustrative problem: compute R, T, V, L_L and the stations',
+  problem($('#pA5'),{id:'a5',cols:true,focus:true,tag:'Interactive',title:'Illustrative problem: compute R, T, V, L_L and the stations',
    given:'Two tangents intersect at station 2+550. A compound curve laid on them has I₁ = 31°, I₂ = 36°, D₁ = 3° and D₂ = 5° (degree of curve on the 20 m arc basis, R = 1145.916 / D).',find:'R₁, R₂, I, T₁, T₂, V₁, V₂, L_L, and the stations of the PC, PCC and PT.',
    inputs:[{k:'pi',label:'Sta. PI (m)',min:1000,max:5000,step:10,v:2550,unit:'m',dp:0},{k:'I1',label:'I₁',min:10,max:40,step:1,v:31,unit:'°'},{k:'I2',label:'I₂',min:10,max:40,step:1,v:36,unit:'°'},{k:'D1',label:'D₁',min:1,max:10,step:0.5,v:3,unit:'°',dp:1},{k:'D2',label:'D₂',min:1,max:10,step:0.5,v:5,unit:'°',dp:1}],
    render:v=>{const c=CALC.tan3(v.pi,v.I1,v.I2,v.D1,v.D2),d=(x)=>f(x,2);
     const w=[ln('R₁ = 1145.916 / D₁',`1145.916 / ${f(v.D1,1)}`,d(c.R1)+' m'),
-     ln('R₂ = 1145.916 / D₂',`1145.916 / ${f(v.D2,1)}`,d(c.R2)+' m'),
-     ln('I = I₁ + I₂ ,  θ = 180° − I',`${v.I1}° + ${v.I2}° ,  180° − ${c.I}°`,`${c.I}° ,  ${c.th}°`),
      ln('T₁ = R₁ tan(I₁/2)',`${d(c.R1)} tan(${v.I1/2}°)`,d(c.T1)+' m'),
+     ln('R₂ = 1145.916 / D₂',`1145.916 / ${f(v.D2,1)}`,d(c.R2)+' m'),
      ln('T₂ = R₂ tan(I₂/2)',`${d(c.R2)} tan(${v.I2/2}°)`,d(c.T2)+' m'),
+     ln('I = I₁ + I₂ ,  θ = 180° − I',`${v.I1}° + ${v.I2}° ,  180° − ${c.I}°`,`${c.I}° ,  ${c.th}°`,'I , θ'),
      ln('V₁ = (T₁+T₂) sin I₂ / sin θ',`${d(c.T1+c.T2)} sin ${v.I2}° / sin ${c.th}°`,d(c.V1)+' m'),
      ln('V₂ = (T₁+T₂) sin I₁ / sin θ',`${d(c.T1+c.T2)} sin ${v.I1}° / sin ${c.th}°`,d(c.V2)+' m'),
-     ln('T₁+V₁ ,  T₂+V₂',`${d(c.T1)} + ${d(c.V1)} ,  ${d(c.T2)} + ${d(c.V2)}`,`${d(c.a)} m ,  ${d(c.b)} m`),
+     ln('T₁+V₁ ,  T₂+V₂',`${d(c.T1)} + ${d(c.V1)} ,  ${d(c.T2)} + ${d(c.V2)}`,`${d(c.a)} m ,  ${d(c.b)} m`,'T₁+V₁ , T₂+V₂'),
      ln('L_L = √[(T₁+V₁)² + (T₂+V₂)² − 2(T₁+V₁)(T₂+V₂) cos θ]',`√[(${d(c.a)})² + (${d(c.b)})² − 2(${d(c.a)})(${d(c.b)}) cos ${c.th}°]`,d(c.LL)+' m'),
-     ln('β = sin⁻¹[(T₂+V₂) sin θ / L_L] ,  φ = sin⁻¹[(T₁+V₁) sin θ / L_L]',`sin⁻¹[${d(c.b)} sin ${c.th}° / ${d(c.LL)}] ,  sin⁻¹[${d(c.a)} sin ${c.th}° / ${d(c.LL)}]`,`${d(c.beta)}° ,  ${d(c.phi)}°  (β + φ = ${d(c.beta+c.phi)}° = I ✓)`),
-     ln('S꜀₁ = R₁ I₁ (π/180)',`${d(c.R1)}(${v.I1}° × π/180)`,d(c.S1)+' m'),
-     ln('S꜀₂ = R₂ I₂ (π/180)',`${d(c.R2)}(${v.I2}° × π/180)`,d(c.S2)+' m'),
+     ln('β = sin⁻¹[(T₂+V₂) sin θ / L_L] ,  φ = sin⁻¹[(T₁+V₁) sin θ / L_L]',`sin⁻¹[${d(c.b)} sin ${c.th}° / ${d(c.LL)}] ,  sin⁻¹[${d(c.a)} sin ${c.th}° / ${d(c.LL)}]`,`${d(c.beta)}° ,  ${d(c.phi)}°  (β + φ = ${d(c.beta+c.phi)}° = I ✓)`,'β , φ'),
      ln('Sta. PC = Sta. PI − (T₁+V₁)',`${stn(v.pi)} − ${d(c.a)}`,stn(c.pc)),
+     ln('S꜀₁ = R₁ I₁ (π/180)',`${d(c.R1)}(${v.I1}° × π/180)`,d(c.S1)+' m'),
      ln('Sta. PCC = Sta. PC + S꜀₁',`${stn(c.pc)} + ${d(c.S1)}`,stn(c.pcc)),
+     ln('S꜀₂ = R₂ I₂ (π/180)',`${d(c.R2)}(${v.I2}° × π/180)`,d(c.S2)+' m'),
      ln('Sta. PT = Sta. PCC + S꜀₂',`${stn(c.pcc)} + ${d(c.S2)}`,stn(c.pt))];
     return{work:w.join(''),
      ans:`<div>R₁ = <b>${d(c.R1)} m</b> · R₂ = <b>${d(c.R2)} m</b> · I = <b>${c.I}°</b></div><div>T₁ = ${d(c.T1)} · T₂ = ${d(c.T2)} · V₁ = ${d(c.V1)} · V₂ = ${d(c.V2)} m</div><div>L_L = <b>${d(c.LL)} m</b></div><div>PC <b>${stn(c.pc)}</b> · PCC <b>${stn(c.pcc)}</b> · PT <b>${stn(c.pt)}</b></div>`,
-     fig:compoundSVG(c.R1,v.I1,c.R2,v.I2,null,{noghost:1,sc:1,T1:4,T2:5,V1:6,V2:7,PI:8,LL:9,L1:11,L2:12,PC:13,PCC:14,PT:15,stn:{PC:stn(c.pc),PCC:stn(c.pcc),PT:stn(c.pt)}})}}});
+     fig:compoundSVG(c.R1,v.I1,c.R2,v.I2,null,{noghost:1,sc:1,T1:2,T2:4,V1:6,V2:7,PI:8,LL:9,L1:12,L2:14,PC:11,PCC:13,PT:15,stn:{PC:stn(c.pc),PCC:stn(c.pcc),PT:stn(c.pt)}})}}});
 });
 
 S(`<div class="in"><div class="kick">Part A · Check yourself</div><h2>Mini quiz</h2>
@@ -664,7 +706,7 @@ function show(n,push){
   cur=Math.max(0,Math.min(slides.length-1,n));
   slides.forEach((s,i)=>s.el.classList.toggle('on',i===cur));
   const s=slides[cur];if(!s.ready){s.ready=true;if(s.init)s.init()}
-  s.el.scrollTop=0;s.el.querySelectorAll('.prob').forEach(p=>p.dispatchEvent(new Event('enter')));
+  s.el.scrollTop=0;s.el.querySelectorAll('.prob,[data-stepper]').forEach(p=>p.dispatchEvent(new Event('enter')));
   $('#ctr').textContent=(cur+1)+' / '+slides.length;$('#bar').style.width=((cur+1)/slides.length*100)+'%';
   $$('#dots i').forEach((d,i)=>d.classList.toggle('on',i===cur));
   $('#prev').disabled=cur===0;$('#next').disabled=cur===slides.length-1;
@@ -673,8 +715,9 @@ function show(n,push){
 }
 function go(n){show(n)}
 $('#prev').addEventListener('click',()=>go(cur-1));$('#next').addEventListener('click',()=>go(cur+1));
-document.addEventListener('keydown',e=>{if(e.target.matches('input[type=range]')&&(e.key==='ArrowLeft'||e.key==='ArrowRight'))return;
-  if(e.key==='ArrowRight'||e.key==='PageDown')go(cur+1);else if(e.key==='ArrowLeft'||e.key==='PageUp')go(cur-1);else if(e.key==='Home')go(0);else if(e.key==='End')go(slides.length-1)});
+const stepSlide=dir=>[...slides[cur].el.querySelectorAll('.prob,[data-stepper]')].some(h=>h._step&&h._step(dir));
+document.addEventListener('keydown',e=>{if(e.target.matches&&e.target.matches('input[type=range]')&&(e.key==='ArrowLeft'||e.key==='ArrowRight'))return;
+  if(e.key==='ArrowRight'||e.key==='PageDown'){if(!stepSlide(1))go(cur+1)}else if(e.key==='ArrowLeft'||e.key==='PageUp'){if(!stepSlide(-1))go(cur-1)}else if(e.key==='Home')go(0);else if(e.key==='End')go(slides.length-1)});
 let tx=null,ty=null;
 deck.addEventListener('touchstart',e=>{if(e.target.closest('input[type=range],.tablewrap'))return;tx=e.touches[0].clientX;ty=e.touches[0].clientY},{passive:true});
 deck.addEventListener('touchend',e=>{if(tx===null)return;const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;tx=null;if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.6)go(cur+(dx<0?1:-1))},{passive:true});
