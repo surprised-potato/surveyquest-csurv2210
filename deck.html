@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Compound Curves and Hydrographic Surveying</title>
+<style>
+:root{--ink:#1d2433;--paper:#fbf7ee;--paper2:#efe7d4;--line:#c9bd9f;--accent:#b4491f;--on-accent:#fff;--c1:#1f6f8b;--c3:#6a8f2a;--good:#2e7d32;--bad:#b3261e;--muted:#6b6455;--shadow:rgba(0,0,0,.18)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ink:#ece6d6;--paper:#161b26;--paper2:#212838;--line:#3a4358;--accent:#e0743f;--on-accent:#161b26;--c1:#58b4d1;--c3:#a5c85a;--good:#6fcf76;--bad:#ff8a80;--muted:#a69f8c;--shadow:rgba(0,0,0,.5)}}
+:root[data-theme="dark"]{--ink:#ece6d6;--paper:#161b26;--paper2:#212838;--line:#3a4358;--accent:#e0743f;--on-accent:#161b26;--c1:#58b4d1;--c3:#a5c85a;--good:#6fcf76;--bad:#ff8a80;--muted:#a69f8c;--shadow:rgba(0,0,0,.5)}
+*{box-sizing:border-box}
+html{font-size:clamp(16px,min(1.2vw,2.2vh),34px)}
+html,body{margin:0;height:100%;background:var(--paper);color:var(--ink);font-family:Georgia,'Times New Roman',serif;line-height:1.5}
+body{font-size:1rem}
+.mono{font-family:ui-monospace,Consolas,monospace}
+#bar{position:fixed;top:0;left:0;height:5px;background:var(--accent);width:0;transition:width .25s;z-index:20}
+header{position:fixed;top:5px;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:6px 16px;font-family:ui-monospace,Consolas,monospace;font-size:.8rem;color:var(--muted);z-index:10;background:var(--paper)}
+header button{font:inherit;color:inherit;background:none;border:1px solid var(--line);padding:3px 9px;cursor:pointer}
+#deck{position:fixed;inset:44px 0 64px 0;overflow:hidden}
+.slide{position:absolute;inset:0;overflow-y:auto;padding:1.2vh clamp(16px,2.6vw,64px) 2vh;display:none}
+.slide.on{display:block}
+.in{max-width:none;width:100%;margin:0 auto;min-height:100%;display:flex;flex-direction:column}
+.in>.prob{flex:1}
+h1{font-size:2.3rem;line-height:1.15;margin:.2em 0}
+h2{font-size:1.55rem;margin:.1em 0 .4em}
+h3{font-size:1.05rem;margin:.9em 0 .3em;font-family:ui-monospace,Consolas,monospace;text-transform:uppercase;letter-spacing:.06em;color:var(--accent)}
+.kick{font-family:ui-monospace,Consolas,monospace;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+p,li{margin:.35em 0}
+ul{padding-left:1.2em}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.card{background:var(--paper2);border:2px solid var(--line);padding:10px 14px}
+.formula{background:var(--paper2);border-left:5px solid var(--accent);padding:8px 14px;margin:8px 0;font-family:Cambria,'Times New Roman',serif;font-size:1.1rem}
+.formula div{margin:2px 0}
+i.v{font-family:Cambria,'Times New Roman',serif}
+sub{font-size:.7em}
+.note{border:2px dashed var(--line);padding:8px 12px;margin:10px 0;color:var(--muted);font-size:.92rem}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{border:1px solid var(--line);padding:3px 8px;text-align:right}
+th{background:var(--paper2);text-align:center}
+td:first-child,th:first-child{text-align:left}
+.tablewrap{max-height:42vh;overflow:auto;border:1px solid var(--line)}
+.prob{border:3px solid var(--ink);box-shadow:5px 5px 0 var(--shadow);padding:10px 14px;margin:10px 0;background:var(--paper)}
+.prob .tag{display:inline-block;background:var(--accent);color:var(--on-accent);font-family:ui-monospace,Consolas,monospace;font-size:.74rem;padding:2px 8px;letter-spacing:.06em;text-transform:uppercase}
+.ctl{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:6px 18px;margin:8px 0}
+.ctl label{display:block;font-family:ui-monospace,Consolas,monospace;font-size:.82rem}
+.ctl label b{float:right;color:var(--accent)}
+.ctl input[type=range]{width:100%;min-height:34px;accent-color:var(--accent)}
+.out{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+.work{font-size:.96rem}
+.work div{margin:2px 0;font-family:Cambria,'Times New Roman',serif}
+.ans{margin-top:8px;background:var(--accent);color:var(--on-accent);padding:8px 12px;font-family:ui-monospace,Consolas,monospace;font-size:1rem}
+.ans div{margin:1px 0}
+svg.plot{width:100%;height:auto;max-height:46vh;background:var(--paper2);border:1px solid var(--line)}
+svg text{font-family:ui-monospace,Consolas,monospace;fill:var(--ink)}
+.btn{font:inherit;font-family:ui-monospace,Consolas,monospace;font-size:.85rem;background:var(--paper2);color:var(--ink);border:2px solid var(--ink);padding:5px 12px;cursor:pointer;min-height:40px}
+.btn.pri{background:var(--accent);color:var(--on-accent)}
+.qz{border:2px solid var(--line);padding:8px 12px;margin:8px 0}
+.qz .ans2{display:none;margin-top:6px;color:var(--good)}
+.qz.show .ans2{display:block}
+footer{position:fixed;left:0;right:0;bottom:0;height:64px;display:flex;gap:10px;align-items:center;justify-content:space-between;padding:8px 16px;background:var(--paper);border-top:2px solid var(--line);z-index:10}
+footer .btn{flex:0 0 auto;min-width:104px;min-height:46px}
+#dots{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;flex:1}
+#dots i{width:9px;height:9px;border-radius:50%;background:var(--line);cursor:pointer}
+#dots i.on{background:var(--accent)}
+.hero{display:flex;flex-direction:column;justify-content:center;flex:1}
+.viz{border:2px solid var(--line);background:var(--paper);padding:10px 14px;margin:14px 0}
+.viz h3{margin-top:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.chip{font:inherit;font-family:ui-monospace,Consolas,monospace;font-size:.82rem;background:var(--paper2);color:var(--ink);border:2px solid var(--line);padding:5px 11px;cursor:pointer;min-height:40px}
+.chip.on{background:var(--accent);color:var(--on-accent);border-color:var(--ink)}
+body.fs header{padding:4px 16px}
+body.pres header,body.pres footer,body.pres #bar{display:none}
+body.pres #deck{inset:0}
+.work div.st{transition:opacity .45s ease,transform .45s ease,background-color .9s ease}
+.work div.hid{opacity:0;transform:translateX(-18px)}
+.work div.now{background:color-mix(in srgb,var(--accent) 22%,transparent);outline:2px solid var(--accent);outline-offset:1px}
+.ans{transition:opacity .4s ease,transform .4s cubic-bezier(.2,1.6,.4,1)}
+.ans.hid{opacity:0;transform:scale(.94)}
+.ans.pop{animation:pop .55s ease}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.04)}100%{transform:scale(1)}}
+.out>div+div{transition:opacity .5s ease}
+.out>div+div.hid{opacity:.15}
+.steps{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0}
+.steps .cnt{font-family:ui-monospace,Consolas,monospace;font-size:.8rem;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.work div.st,.ans,.out>div+div{transition:none}.ans.pop{animation:none}}
+@media (max-width:760px){
+  h1{font-size:1.8rem}
+  .grid2,.out{grid-template-columns:1fr}
+  #dots{display:none}
+  footer .btn{flex:1}
+}
+@media print{
+  header,footer,#bar{display:none}
+  #deck{position:static;inset:auto;overflow:visible}
+  .slide{position:static;display:block;page-break-after:always;overflow:visible}
+  html,body{height:auto}
+}
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<header><span>CSURV2210 · Compound curves &amp; hydrography</span><span><span id="ctr">1 / 1</span> <button id="fs" type="button" aria-label="Toggle full screen">⛶ Full screen</button> <button id="thm" type="button" aria-label="Toggle theme">Theme</button></span></header>
+<main id="deck"></main>
+<footer><button class="btn" id="prev" type="button">← Previous</button><div id="dots" aria-hidden="true"></div><button class="btn pri" id="next" type="button">Next →</button></footer>
+
+<script>
+/* ---------- helpers ---------- */
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const D2R=Math.PI/180;
+const f=(x,n=2)=>(+x).toFixed(n);
+function stn(m){const k=Math.floor(m/1000+1e-9),r=m-k*1000;return k+'+'+(r<10?'00':r<100?'0':'')+r.toFixed(2)}
+function dms(deg){let s=Math.round(deg*3600);const d=Math.floor(s/3600);s-=d*3600;const m=Math.floor(s/60);s-=m*60;return d+'°'+String(m).padStart(2,'0')+'′'+String(s).padStart(2,'0')+'″'}
+
+/* ---------- the maths (class formulas: Lab 10 for arcs, Lab 9 for the stream) ---------- */
+const CALC={
+  arc(R,I){const h=I*D2R/2;return{t:R*Math.tan(h),L:R*I*D2R,LC:2*R*Math.sin(h),E:R*(1/Math.cos(h)-1),M:R*(1-Math.cos(h))}},
+  stake(start,L,R,s){ // full-station deflection table from the start of one arc
+    const pts=[[start,0]];let k=Math.floor(start/s+1e-9)+1;
+    while(k*s<start+L-1e-9){pts.push([k*s,k*s-start]);k++}
+    pts.push([start+L,L]);let prev=0;
+    return pts.map(([sta,d],i)=>{const row={sta,d,defl:d/(2*R)/D2R,chord:2*R*Math.sin((d-prev)/(2*R))};prev=d;return row})},
+  stream(depths,v,a,i){ // depths d1..d6, velocities A..G, first length a, interval i
+    const l=[a,i,i,i,i,i,i],A=[];
+    for(let k=0;k<7;k++)A.push(k===0?.5*l[0]*depths[0]:k===6?.5*l[6]*depths[5]:.5*l[k]*(depths[k-1]+depths[k]));
+    const q=A.map((x,k)=>x*v[k]),At=A.reduce((x,y)=>x+y,0),Q=q.reduce((x,y)=>x+y,0);
+    return{l,A,q,At,Q,vm:At?Q/At:0,W:a+6*i}},
+  fathom(fm){const ft=fm*6;return{ft,m:ft*0.3048}}
+};
+
+/* ---------- interactive problem builder ---------- */
+function problem(host,spec){
+  const vals={};spec.inputs.forEach(x=>vals[x.k]=x.v);
+  host.classList.add('prob');
+  host.innerHTML=`<span class="tag">${spec.tag}</span> <b>${spec.title}</b><p>${spec.given}</p>
+  <div class="ctl">${spec.inputs.map(x=>`<div><label for="${spec.id}-${x.k}">${x.label}<b id="${spec.id}-${x.k}-v"></b></label><input type="range" id="${spec.id}-${x.k}" min="${x.min}" max="${x.max}" step="${x.step}" value="${x.v}"></div>`).join('')}</div>
+  <div class="out"><div><div class="work" id="${spec.id}-w"></div><div class="ans" id="${spec.id}-a"></div></div><div id="${spec.id}-f"></div></div>
+  <p class="steps"><button type="button" class="btn pri" id="${spec.id}-p">▶ Play steps</button><button type="button" class="btn" id="${spec.id}-n">Next step ›</button><button type="button" class="btn" id="${spec.id}-r">Reset to lab values</button><span class="cnt" id="${spec.id}-c"></span></p>`;
+  let shown=null,timer=null; /* shown = number of working lines revealed; null = everything */
+  const W=()=>$('#'+spec.id+'-w'),A=()=>$('#'+spec.id+'-a'),F=()=>$('#'+spec.id+'-f');
+  const calm=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  const paint=(flash)=>{const L=[...W().children];L.forEach(d=>d.classList.add('st'));
+    const n=shown===null?L.length:shown;
+    L.forEach((d,k)=>{d.classList.toggle('hid',k>=n);d.classList.toggle('now',shown!==null&&k===n-1)});
+    const done=n>=L.length;A().classList.toggle('hid',!done);F().classList.toggle('hid',shown!==null&&n<1);
+    $('#'+spec.id+'-c').textContent=shown===null?'':(done?'all '+L.length+' steps':'step '+n+' of '+L.length);
+    if(done&&flash){A().classList.remove('pop');void A().offsetWidth;A().classList.add('pop')}};
+  const stop=()=>{clearTimeout(timer);timer=null};
+  const play=()=>{stop();shown=0;paint();if(calm){shown=null;paint(true);return}
+    const tick=()=>{const L=W().children.length;shown++;paint(true);if(shown<=L)timer=setTimeout(tick,shown===L?600:560);else{shown=null;paint(false)}};timer=setTimeout(tick,350)};
+  const next=()=>{stop();const L=W().children.length;if(shown===null)shown=0;shown++;if(shown>L){shown=null}paint(true)};
+  host.addEventListener('enter',play);
+  const upd=()=>{spec.inputs.forEach(x=>{vals[x.k]=+$('#'+spec.id+'-'+x.k).value;$('#'+spec.id+'-'+x.k+'-v').textContent=f(vals[x.k],x.dp??(x.step<1?2:0))+(x.unit?' '+x.unit:'')});
+    const r=spec.render(vals);W().innerHTML=r.work;A().innerHTML=r.ans;F().innerHTML=r.fig||'';paint(false)};
+  spec.inputs.forEach(x=>$('#'+spec.id+'-'+x.k).addEventListener('input',()=>{upd();if(spec.after)spec.after()}));
+  $('#'+spec.id+'-p').addEventListener('click',play);$('#'+spec.id+'-n').addEventListener('click',next);
+  $('#'+spec.id+'-r').addEventListener('click',()=>{spec.inputs.forEach(x=>$('#'+spec.id+'-'+x.k).value=x.v);upd();if(spec.after)spec.after()});
+  upd();return{upd,vals,set(k,v){$('#'+spec.id+'-'+k).value=v}}
+}
+
+/* ---------- figures ---------- */
+function compoundSVG(R1,I1,R2,I2,hl){
+  // PC at origin, heading +x, turning left; y is flipped for the screen
+  const a1=I1*D2R,a2=(I1+I2)*D2R;
+  const P0=[0,0],O1=[0,R1],P1=[R1*Math.sin(a1),R1*(1-Math.cos(a1))];
+  const O2=[P1[0]-R2*Math.sin(a1),P1[1]+R2*Math.cos(a1)];
+  const P2=[O2[0]+R2*Math.sin(a2),O2[1]-R2*Math.cos(a2)];
+  const pts=[P0,P1,P2,O1,O2];
+  for(let k=0;k<=12;k++){const t=a1*k/12;pts.push([R1*Math.sin(t),R1*(1-Math.cos(t))]);const u=a1+(a2-a1)*k/12;pts.push([O2[0]+R2*Math.sin(u),O2[1]-R2*Math.cos(u)])}
+  /* ghost: the lab values, so a change in R or I is visible against a fixed reference */
+  const GR1=300,GI1=30,GR2=200,GI2=40,ga1=GI1*D2R,ga2=(GI1+GI2)*D2R,
+    gP1=[GR1*Math.sin(ga1),GR1*(1-Math.cos(ga1))],gO2=[gP1[0]-GR2*Math.sin(ga1),gP1[1]+GR2*Math.cos(ga1)],gP2=[gO2[0]+GR2*Math.sin(ga2),gO2[1]-GR2*Math.cos(ga2)];
+  pts.push([0,GR1],gP1,gO2,gP2);
+  for(let k=0;k<=12;k++){const t=ga1*k/12;pts.push([GR1*Math.sin(t),GR1*(1-Math.cos(t))]);const u=ga1+(ga2-ga1)*k/12;pts.push([gO2[0]+GR2*Math.sin(u),gO2[1]-GR2*Math.cos(u)])}
+  const xs=pts.map(p=>p[0]),ys=pts.map(p=>-p[1]);
+  let x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
+  const pad=Math.max(x1-x0,y1-y0)*.1;x0-=pad;x1+=pad;y0-=pad;y1+=pad;
+  const w=x1-x0,h=y1-y0,fs=Math.max(w,h)*.04,P=p=>`${f(p[0],1)},${f(-p[1],1)}`;
+  const tl=Math.max(w,h)*.12;
+  const th=(d)=>`<path d="${d}" fill="none" stroke="var(--good)" stroke-width="9" opacity=".6" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`;
+  const wedge=(O,R,A,B,t)=>{const r=R*.3;return `<path d="M${P([O[0]+r*Math.sin(A),O[1]-r*Math.cos(A)])} A${r} ${r} 0 0 0 ${P([O[0]+r*Math.sin(B),O[1]-r*Math.cos(B)])}" fill="none" stroke="var(--good)" stroke-width="4" vector-effect="non-scaling-stroke"/><text x="${f(O[0]+r*1.15*Math.sin((A+B)/2),1)}" y="${f(-(O[1]-r*1.15*Math.cos((A+B)/2)),1)}" font-size="${f(fs*1.2,1)}" fill="var(--good)">${t}</text>`};
+  const same=R1===GR1&&I1===GI1&&R2===GR2&&I2===GI2,Pg=p=>`${f(p[0],1)},${f(-p[1],1)}`;
+  const ghost=same?'':`<path d="M0,0 A${GR1} ${GR1} 0 0 0 ${Pg(gP1)} A${GR2} ${GR2} 0 0 0 ${Pg(gP2)}" fill="none" stroke="var(--muted)" stroke-width="2" stroke-dasharray="6 5" opacity=".8" vector-effect="non-scaling-stroke"/><text x="${f(gP2[0],1)}" y="${f(-gP2[1]+fs*1.6,1)}" font-size="${f(fs*.9,1)}" fill="var(--muted)" text-anchor="end">dashed = lab values</text>`;
+  const sbar=`<path d="M${f(x0+pad*.5,1)} ${f(y1-pad*.5,1)}h100" stroke="var(--ink)" stroke-width="3" vector-effect="non-scaling-stroke"/><text x="${f(x0+pad*.5,1)}" y="${f(y1-pad*.5-fs*.4,1)}" font-size="${f(fs*.9,1)}">100 m</text>`;
+  let hlx='';
+  if(hl==='L1')hlx=th(`M${P(P0)} A${R1} ${R1} 0 0 0 ${P(P1)}`);
+  else if(hl==='L2')hlx=th(`M${P(P1)} A${R2} ${R2} 0 0 0 ${P(P2)}`);
+  else if(hl==='R1')hlx=th(`M${P(O1)}L${P(P0)}M${P(O1)}L${P(P1)}`);
+  else if(hl==='R2')hlx=th(`M${P(O2)}L${P(P1)}M${P(O2)}L${P(P2)}`);
+  else if(hl==='I1')hlx=wedge(O1,R1,0,a1,'I₁');
+  else if(hl==='I2')hlx=wedge(O2,R2,a1,a2,'I₂');
+  else if(hl==='PC'||hl==='PCC'||hl==='PT'){const p={PC:P0,PCC:P1,PT:P2}[hl];hlx=`<circle cx="${f(p[0],1)}" cy="${f(-p[1],1)}" r="${f(fs*1.3,1)}" fill="none" stroke="var(--good)" stroke-width="4" vector-effect="non-scaling-stroke"/>`}
+  return `<svg class="plot" viewBox="${f(x0,1)} ${f(y0,1)} ${f(w,1)} ${f(h,1)}" role="img" aria-label="Compound curve: arc 1 of radius ${R1} metres turning ${I1} degrees, then arc 2 of radius ${R2} metres turning ${I2} degrees">
+  <line x1="${-tl}" y1="0" x2="${f(tl*1.2,1)}" y2="0" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="5 4" vector-effect="non-scaling-stroke"/>
+  <path d="M${P(P0)} A${R1} ${R1} 0 0 0 ${P(P1)}" fill="none" stroke="var(--c1)" stroke-width="3.5" vector-effect="non-scaling-stroke"/>
+  <path d="M${P(P1)} A${R2} ${R2} 0 0 0 ${P(P2)}" fill="none" stroke="var(--accent)" stroke-width="3.5" vector-effect="non-scaling-stroke"/>
+  <path d="M${P(O1)}L${P(P0)}M${P(O1)}L${P(P1)}" stroke="var(--c1)" stroke-width="1.2" stroke-dasharray="4 3" fill="none" vector-effect="non-scaling-stroke"/>
+  <path d="M${P(O2)}L${P(P1)}M${P(O2)}L${P(P2)}" stroke="var(--accent)" stroke-width="1.2" stroke-dasharray="4 3" fill="none" vector-effect="non-scaling-stroke"/>
+  ${[['PC',P0],['PCC',P1],['PT',P2]].map(([n,p])=>`<circle cx="${f(p[0],1)}" cy="${f(-p[1],1)}" r="${f(fs*.35,1)}" fill="var(--ink)"/><text x="${f(p[0]+fs*.7,1)}" y="${f(-p[1]-fs*.6,1)}" font-size="${f(fs,1)}">${n}</text>`).join('')}
+  <text x="${f(O1[0]+fs*.5,1)}" y="${f(-O1[1],1)}" font-size="${f(fs,1)}" fill="var(--c1)">O₁</text>
+  <text x="${f(O2[0]+fs*.5,1)}" y="${f(-O2[1],1)}" font-size="${f(fs,1)}">O₂</text>${ghost}${sbar}${hlx}</svg>`}
+
+function lineChart(xs,ys,cx,cy,xl,yl){
+  const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys),W=400,H=240,L=50,B=34,T=14,Rr=14;
+  const X=x=>L+(x-x0)/(x1-x0)*(W-L-Rr),Y=y=>H-B-(y-y0)/(y1-y0||1)*(H-B-T);
+  return `<svg class="plot" viewBox="0 0 ${W} ${H}" role="img" aria-label="${yl} against ${xl}">
+  <path d="M${xs.map((x,i)=>X(x)+','+Y(ys[i])).join('L')}" fill="none" stroke="var(--c1)" stroke-width="3"/>
+  <circle cx="${X(cx)}" cy="${Y(cy)}" r="6" fill="var(--accent)"/>
+  <line x1="${L}" y1="${H-B}" x2="${W-Rr}" y2="${H-B}" stroke="var(--ink)"/><line x1="${L}" y1="${T}" x2="${L}" y2="${H-B}" stroke="var(--ink)"/>
+  <text x="${L}" y="${H-B+16}" font-size="11">${x0}</text><text x="${W-Rr}" y="${H-B+16}" font-size="11" text-anchor="end">${x1}</text>
+  <text x="${W/2}" y="${H-6}" font-size="11" text-anchor="middle">${xl}</text>
+  <text x="${L-4}" y="${H-B}" font-size="11" text-anchor="end">${f(y0,0)}</text><text x="${L-4}" y="${T+8}" font-size="11" text-anchor="end">${f(y1,0)}</text>
+  <text x="${X(cx)}" y="${Y(cy)-10}" font-size="11" text-anchor="middle" fill="var(--accent)">${f(cy,1)}</text></svg>`}
+
+function crossSection(depths,l,W){
+  const xs=[0];let acc=l[0];for(let k=0;k<6;k++){xs.push(acc);acc+=l[k+1]}xs.push(W);
+  const ds=[0,...depths,0],dmax=Math.max(3,...depths)*1.15;
+  const w=400,h=220,L=14,Rr=14,T=26,B=14,X=x=>L+x/W*(w-L-Rr),Y=d=>T+d/dmax*(h-T-B);
+  const poly=xs.map((x,i)=>X(x)+','+Y(ds[i])).join(' ');
+  return `<svg class="plot" viewBox="0 0 ${w} ${h}" role="img" aria-label="Stream cross-section from the right water edge to the left water edge, ${f(W,0)} metres wide">
+  <polygon points="${X(0)},${Y(0)} ${poly} ${X(W)},${Y(0)}" fill="var(--c1)" opacity=".35" stroke="var(--c1)" stroke-width="2"/>
+  <line x1="${X(0)-6}" y1="${Y(0)}" x2="${X(W)+6}" y2="${Y(0)}" stroke="var(--ink)" stroke-width="2" stroke-dasharray="6 4"/>
+  ${xs.map((x,i)=>i>0&&i<7?`<line x1="${X(x)}" y1="${Y(0)}" x2="${X(x)}" y2="${Y(ds[i])}" stroke="var(--ink)" stroke-width="1" stroke-dasharray="3 3"/><text x="${X(x)}" y="${Y(ds[i])+13}" font-size="10" text-anchor="middle">${f(ds[i],1)}</text>`:'').join('')}
+  <text x="${X(0)}" y="16" font-size="11" text-anchor="start">RWE</text><text x="${X(W)}" y="16" font-size="11" text-anchor="end">LWE</text>
+  <text x="${w/2}" y="16" font-size="11" text-anchor="middle">${f(W,0)} m wide</text></svg>`}
+
+function barChart(vals,labels,unit){
+  const w=400,h=220,L=36,B=26,T=22,mx=Math.max(1,...vals)*1.1,bw=(w-L-10)/vals.length;
+  return `<svg class="plot" viewBox="0 0 ${w} ${h}" role="img" aria-label="Partial discharge of each section in ${unit}">
+  ${vals.map((v,i)=>{const bh=v/mx*(h-T-B),x=L+i*bw+6;return `<rect x="${x}" y="${h-B-bh}" width="${bw-12}" height="${bh}" fill="var(--accent)"/><text x="${x+(bw-12)/2}" y="${h-B-bh-4}" font-size="10" text-anchor="middle">${f(v,1)}</text><text x="${x+(bw-12)/2}" y="${h-8}" font-size="11" text-anchor="middle">${labels[i]}</text>`}).join('')}
+  <line x1="${L}" y1="${h-B}" x2="${w-6}" y2="${h-B}" stroke="var(--ink)"/><text x="4" y="12" font-size="11">q (${unit})</text></svg>`}
+
+/* ---------- explanation visuals ---------- */
+const chipsHTML=(items,cur,cls)=>`<div class="chips">${items.map(([k,t])=>`<button type="button" class="chip${k===cur?' on':''}" data-k="${k}">${t}</button>`).join('')}</div>`;
+const sliderHTML=(id,label,min,max,step,v)=>`<div><label for="${id}">${label}<b id="${id}-v"></b></label><input type="range" id="${id}" min="${min}" max="${max}" step="${step}" value="${v}"></div>`;
+const AC='var(--accent)',BL='var(--c1)',MU='var(--muted)';
+
+/* 1. simple curve elements */
+function vizSimple(){
+  const h0=$('#vSimple');let sel='T';
+  h0.classList.add('viz');
+  h0.innerHTML=`<h3>Explore the simple curve</h3><p style="margin:0 0 6px">Pick an element to light it up, then change R and I.</p>${chipsHTML([['T','T tangent'],['Lc','L<sub>c</sub> arc'],['LC','LC long chord'],['E','E external'],['M','M middle ordinate']],sel)}
+  <div class="ctl">${sliderHTML('vs-R','R',100,400,10,300)}${sliderHTML('vs-I','I',20,90,1,60)}</div>
+  <div class="out"><div id="vs-fig"></div><div><div class="work" id="vs-w"></div><div class="ans" id="vs-a"></div></div></div>`;
+  const draw=()=>{
+    const R=+$('#vs-R').value,I=+$('#vs-I').value,h=I*D2R/2,s=Math.sin(h),c=Math.cos(h);
+    $('#vs-R-v').textContent=R+' m';$('#vs-I-v').textContent=I+'°';
+    const PC=[-R*s,R*c],PT=[R*s,R*c],PI=[0,R/c],MD=[0,R],Q=[0,R*c],O=[0,0];
+    const x0=-330,x1=330,y0=-600,y1=40; /* fixed scale: the same metres per pixel for every R and I */
+    const w=x1-x0,hh=y1-y0,fs=Math.max(w,hh)*.045,P=p=>`${f(p[0],1)},${f(-p[1],1)}`;
+    const sbar=`<path d="M${x0+14} ${y1-16}h100" stroke="var(--ink)" stroke-width="3" vector-effect="non-scaling-stroke"/><text x="${x0+14}" y="${y1-24}" font-size="${f(fs*.9,1)}">100 m</text>`;
+    const ln=(a,b,on,col)=>`<path d="M${P(a)}L${P(b)}" fill="none" stroke="${on?col:MU}" stroke-width="${on?4:1.4}" ${on?'':'stroke-dasharray="5 4"'} vector-effect="non-scaling-stroke"/>`;
+    const lab=(p,t,dx=0,dy=0)=>`<text x="${f(p[0]+dx*fs,1)}" y="${f(-p[1]+dy*fs,1)}" font-size="${f(fs,1)}">${t}</text>`;
+    const mid=(a,b)=>[(a[0]+b[0])/2,(a[1]+b[1])/2];
+    const arcOn=sel==='Lc';
+    const svg=`<svg class="plot" viewBox="${f(x0,1)} ${f(y0,1)} ${f(w,1)} ${f(hh,1)}" role="img" aria-label="Simple curve with radius ${R} and deflection angle ${I} degrees">
+    ${ln(O,PC,false)}${ln(O,PT,false)}
+    ${ln(PC,PI,sel==='T',AC)}${ln(PI,PT,sel==='T',AC)}
+    ${ln(PC,PT,sel==='LC',AC)}${ln(PI,MD,sel==='E',AC)}${ln(MD,Q,sel==='M',AC)}
+    <path d="M${P(PC)} A${R} ${R} 0 0 1 ${P(PT)}" fill="none" stroke="${arcOn?AC:BL}" stroke-width="${arcOn?6:3}" vector-effect="non-scaling-stroke"/>
+    ${[['PC',PC,-2.4,-.5],['PT',PT,.6,-.5],['PI',PI,.7,.4],['O',O,.7,.4]].map(([n,p,dx,dy])=>`<circle cx="${f(p[0],1)}" cy="${f(-p[1],1)}" r="${f(fs*.3,1)}" fill="var(--ink)"/>${lab(p,n,dx,dy)}`).join('')}
+    ${sel==='T'?lab(mid(PC,PI),'T',-1.3,0)+lab(mid(PI,PT),'T',.6,0):''}${sel==='Lc'?lab(MD,'L<tspan font-size="'+f(fs*.7,1)+'">c</tspan>',-.5,-1):''}${sel==='LC'?lab(Q,'LC',-.6,1.6):''}${sel==='E'?lab(mid(PI,MD),'E',.6,0):''}${sel==='M'?lab(mid(MD,Q),'M',.6,0):''}
+    <text x="${f(O[0]+fs*.8,1)}" y="${f(-O[1]-fs*1.6,1)}" font-size="${f(fs*.9,1)}" fill="${BL}">I</text>${sbar}</svg>`;
+    $('#vs-fig').innerHTML=svg;
+    const A=CALC.arc(R,I);
+    const info={T:['T = R tan(I/2)',`${R} tan(${I}°/2)`,A.t,'m','Distance from the PC to the PI (and from the PI to the PT).'],Lc:['L<sub>c</sub> = R I',`${R}(${I}° × π/180)`,A.L,'m','Length of the curve along the arc.'],LC:['LC = 2R sin(I/2)',`2(${R}) sin(${I}°/2)`,A.LC,'m','Straight line from the PC to the PT.'],E:['E = R(sec(I/2) − 1)',`${R}(sec ${I/2}° − 1)`,A.E,'m','Nearest distance from the PI to the curve.'],M:['M = R(1 − cos(I/2))',`${R}(1 − cos ${I/2}°)`,A.M,'m','Middle ordinate: from the curve midpoint to the chord midpoint.']}[sel];
+    $('#vs-w').innerHTML=`<div>${info[0]}</div><div>= ${info[1]}</div><div style="color:var(--muted)">${info[4]}</div>`;
+    $('#vs-a').innerHTML=`<div><b>${f(info[2])} ${info[3]}</b></div>`;
+  };
+  h0.addEventListener('input',draw);
+  $$('.chip',h0).forEach(b=>b.addEventListener('click',()=>{sel=b.dataset.k;$$('.chip',h0).forEach(x=>x.classList.toggle('on',x===b));draw()}));
+  draw();
+}
+
+/* 2. deflection angle geometry */
+function vizDefl(){
+  const h0=$('#vDefl');h0.classList.add('viz');
+  h0.innerHTML=`<h3>Why the deflection angle is l / 2R</h3><div class="ctl">${sliderHTML('vd-R','R',100,500,10,300)}${sliderHTML('vd-l','Distance l from the PC along the arc',0,300,5,100)}</div>
+  <div class="out"><div id="vd-fig"></div><div><div class="work" id="vd-w"></div><div class="ans" id="vd-a"></div></div></div>`;
+  const draw=()=>{
+    const R=+$('#vd-R').value,l=Math.min(+$('#vd-l').value,R*Math.PI/2),phi=l/R;
+    $('#vd-R-v').textContent=R+' m';$('#vd-l-v').textContent=l+' m';
+    const P0=[0,0],O=[0,R],X=[R*Math.sin(phi),R*(1-Math.cos(phi))],T=[R*1.35,0];
+    const x0=-80,x1=700,y0=-560,y1=60; /* fixed scale */
+    const w=x1-x0,hh=y1-y0,fs=Math.max(w,hh)*.04,P=p=>`${f(p[0],1)},${f(-p[1],1)}`;
+    const sbar=`<path d="M${x0+14} ${y1-16}h100" stroke="var(--ink)" stroke-width="3" vector-effect="non-scaling-stroke"/><text x="${x0+14}" y="${y1-24}" font-size="${f(fs*.9,1)}">100 m</text>`;
+    const d=phi/2,ra=R*.3,rb=R*.22;
+    const svg=`<svg class="plot" viewBox="${f(x0,1)} ${f(y0,1)} ${f(w,1)} ${f(hh,1)}" role="img" aria-label="Deflection angle at the PC equals half the central angle">
+    <path d="M${P(P0)}L${P(T)}" stroke="${MU}" stroke-width="1.6" stroke-dasharray="6 4" fill="none" vector-effect="non-scaling-stroke"/>
+    <path d="M${P(O)}L${P(P0)}M${P(O)}L${P(X)}" stroke="${BL}" stroke-width="1.4" stroke-dasharray="4 3" fill="none" vector-effect="non-scaling-stroke"/>
+    <path d="M${P(P0)} A${R} ${R} 0 0 0 ${P([R*Math.sin(Math.PI/2),R])}" stroke="${BL}" stroke-width="2" fill="none" opacity=".35" vector-effect="non-scaling-stroke"/>
+    <path d="M${P(P0)} A${R} ${R} 0 0 0 ${P(X)}" stroke="${BL}" stroke-width="4.5" fill="none" vector-effect="non-scaling-stroke"/>
+    <path d="M${P(P0)}L${P(X)}" stroke="${AC}" stroke-width="3.5" fill="none" vector-effect="non-scaling-stroke"/>
+    ${phi>0.01?`<path d="M${P([ra,0])} A${ra} ${ra} 0 0 0 ${P([ra*Math.cos(d),ra*Math.sin(d)])}" stroke="${AC}" stroke-width="2.5" fill="none" vector-effect="non-scaling-stroke"/><text x="${f(ra*1.05,1)}" y="${f(-ra*.25,1)}" font-size="${f(fs,1)}" fill="${AC}">δ</text>
+    <path d="M${P([O[0]+rb*0,O[1]-rb])} A${rb} ${rb} 0 0 0 ${P([O[0]+rb*Math.sin(phi),O[1]-rb*Math.cos(phi)])}" stroke="${BL}" stroke-width="2.5" fill="none" vector-effect="non-scaling-stroke"/><text x="${f(rb*.3,1)}" y="${f(-O[1]+rb*1.5,1)}" font-size="${f(fs,1)}" fill="${BL}">φ</text>`:''}
+    <circle cx="0" cy="0" r="${f(fs*.3,1)}" fill="var(--ink)"/><text x="${f(-fs*2.2,1)}" y="${f(-fs*.6,1)}" font-size="${f(fs,1)}">PC</text>
+    <circle cx="${f(X[0],1)}" cy="${f(-X[1],1)}" r="${f(fs*.35,1)}" fill="${AC}"/><circle cx="0" cy="${f(-O[1],1)}" r="${f(fs*.3,1)}" fill="var(--ink)"/><text x="${f(fs*.6,1)}" y="${f(-O[1],1)}" font-size="${f(fs,1)}">O</text>${sbar}</svg>`;
+    $('#vd-fig').innerHTML=svg;
+    const dd=d/D2R,ch=2*R*Math.sin(d);
+    $('#vd-w').innerHTML=`<div>Central angle φ = l / R = ${f(l,0)} / ${R} = ${f(phi/D2R,3)}°</div><div>The angle between a tangent and a chord is half the angle at the centre:</div><div>δ = φ / 2 = l / 2R</div><div>chord = 2R sin δ</div>`;
+    $('#vd-a').innerHTML=`<div>δ = <b>${dms(dd)}</b></div><div>chord from the PC = <b>${f(ch,3)} m</b></div>`;
+  };
+  h0.addEventListener('input',draw);draw();
+}
+
+/* 3. generic track (simple / compound / reverse) */
+function trackSVG(arcs){
+  let P=[0,0],h=0;const segs=[],joints=[[0,0]],hs=[0],pts=[[0,0]];
+  arcs.forEach(a=>{const s=a.s||1,th=a.th*D2R,C=[P[0]-s*a.R*Math.sin(h),P[1]+s*a.R*Math.cos(h)],h2=h+s*th;
+    const P2=[C[0]+s*a.R*Math.sin(h2),C[1]-s*a.R*Math.cos(h2)];
+    segs.push({P,P2,R:a.R,s,C,col:a.col});pts.push(C);
+    for(let k=1;k<=10;k++){const hh=h+s*th*k/10;pts.push([C[0]+s*a.R*Math.sin(hh),C[1]-s*a.R*Math.cos(hh)])}
+    P=P2;h=h2;joints.push(P2.slice());hs.push(h)});
+  const xs=pts.map(p=>p[0]),ys=pts.map(p=>-p[1]);
+  let x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);const pad=Math.max(x1-x0,y1-y0)*.12;x0-=pad;x1+=pad;y0-=pad;y1+=pad;
+  const w=x1-x0,hh=y1-y0,fs=Math.max(w,hh)*.04,Q=p=>`${f(p[0],1)},${f(-p[1],1)}`,tl=Math.max(w,hh)*.22;
+  let g='';
+  joints.slice(1,-1).forEach((j,i)=>{const hd=hs[i+1];g+=`<path d="M${Q([j[0]-tl*Math.cos(hd),j[1]-tl*Math.sin(hd)])}L${Q([j[0]+tl*Math.cos(hd),j[1]+tl*Math.sin(hd)])}" stroke="${MU}" stroke-width="1.6" stroke-dasharray="6 4" fill="none" vector-effect="non-scaling-stroke"/>`});
+  segs.forEach(sg=>{g+=`<path d="M${Q(sg.P)} A${sg.R} ${sg.R} 0 0 ${sg.s===1?0:1} ${Q(sg.P2)}" fill="none" stroke="${sg.col}" stroke-width="4" vector-effect="non-scaling-stroke"/>`;
+    g+=`<path d="M${Q(sg.C)}L${Q(sg.P)}M${Q(sg.C)}L${Q(sg.P2)}" stroke="${sg.col}" stroke-width="1.2" stroke-dasharray="4 3" fill="none" vector-effect="non-scaling-stroke"/><circle cx="${f(sg.C[0],1)}" cy="${f(-sg.C[1],1)}" r="${f(fs*.35,1)}" fill="${sg.col}"/><text x="${f(sg.C[0]+fs*.6,1)}" y="${f(-sg.C[1]+fs*.3,1)}" font-size="${f(fs,1)}" fill="${sg.col}">O${arcs.length>1?'₁₂'[segs.indexOf(sg)]:''}</text>`});
+  return `<svg class="plot" viewBox="${f(x0,1)} ${f(y0,1)} ${f(w,1)} ${f(hh,1)}" role="img" aria-label="Curve diagram">${g}</svg>`}
+function vizTypes(){
+  const h0=$('#vTypes');h0.classList.add('viz');let sel='simple';
+  const T={simple:{svg:trackSVG([{R:260,th:70,col:BL}]),t:'One arc, one radius, one centre.'},
+    compound:{svg:trackSVG([{R:320,th:35,col:BL},{R:170,th:45,col:AC}]),t:'Two arcs, different radii, bending the <b>same way</b>. Both centres (O₁, O₂) are on the <b>same side</b> of the common tangent (dashed), and lie on one straight line with the joint.'},
+    reverse:{svg:trackSVG([{R:230,th:40,col:BL},{R:230,th:40,s:-1,col:AC}]),t:'Two arcs bending in <b>opposite</b> directions. The centres are on <b>opposite sides</b> of the common tangent (dashed). Named here only; reverse curves are a later topic.'}};
+  h0.innerHTML=`<h3>See the difference</h3>${chipsHTML([['simple','Simple'],['compound','Compound'],['reverse','Reverse']],sel)}<div class="out"><div id="vt-fig"></div><div class="card" id="vt-t"></div></div>`;
+  const draw=()=>{$('#vt-fig').innerHTML=T[sel].svg;$('#vt-t').innerHTML=T[sel].t};
+  $$('.chip',h0).forEach(b=>b.addEventListener('click',()=>{sel=b.dataset.k;$$('.chip',h0).forEach(x=>x.classList.toggle('on',x===b));draw()}));draw();
+}
+
+/* 4. anatomy of a compound curve: click a part */
+function vizAnat(){
+  const h0=$('#anat');h0.classList.add('viz');let sel='PCC';
+  const names=[['PC','PC'],['PCC','PCC'],['PT','PT'],['R1','R₁'],['R2','R₂'],['I1','I₁'],['I2','I₂'],['L1','L₁'],['L2','L₂']];
+  const D={PC:'Point of curvature: the start of the first arc, where the curve leaves the back tangent.',PCC:'Point of compound curvature: where arc 1 meets arc 2. Both arcs share one tangent here, so O₁, the PCC and O₂ are in a straight line.',PT:'Point of tangency: the end of the second arc, where the curve joins the forward tangent.',R1:'Radius of arc 1, from the centre O₁ to the curve.',R2:'Radius of arc 2, from the centre O₂ to the curve.',I1:'Central angle of arc 1 (the turn it makes). Drag the slider to change it.',I2:'Central angle of arc 2. The total deflection is I = I₁ + I₂.',L1:'Length of arc 1: L₁ = R₁ I₁.',L2:'Length of arc 2: L₂ = R₂ I₂.'};
+  h0.innerHTML=`<p style="margin:0 0 6px"><b>Tap a part to highlight it.</b></p>${chipsHTML(names,sel)}<div class="ctl">${sliderHTML('va-I1','I₁',10,80,1,30)}${sliderHTML('va-I2','I₂',10,80,1,40)}</div><div id="va-fig"></div><div class="card" id="va-t" style="margin-top:6px"></div>`;
+  const draw=()=>{const I1=+$('#va-I1').value,I2=+$('#va-I2').value;$('#va-I1-v').textContent=I1+'°';$('#va-I2-v').textContent=I2+'°';
+    $('#va-fig').innerHTML=compoundSVG(300,I1,200,I2,sel);
+    const a=CALC.arc(300,I1),b=CALC.arc(200,I2);
+    const ex={L1:` Here L₁ = ${f(a.L)} m.`,L2:` Here L₂ = ${f(b.L)} m.`,I1:` I₁ = ${I1}°.`,I2:` I₂ = ${I2}°, so I = ${I1+I2}°.`}[sel]||'';
+    $('#va-t').innerHTML=`<b>${names.find(n=>n[0]===sel)[1]}</b>: ${D[sel]}${ex}`};
+  h0.addEventListener('input',draw);
+  $$('.chip',h0).forEach(b=>b.addEventListener('click',()=>{sel=b.dataset.k;$$('.chip',h0).forEach(x=>x.classList.toggle('on',x===b));draw()}));draw();
+}
+
+/* 5. six field operations */
+function vizOps(){
+  const h0=$('#vOps');h0.classList.add('viz');let sel=1,timer=null;
+  const steps=[['Reconnaissance','Walk the area, decide the extent, the control points and the best way to sound.'],['Horizontal control','Set control stations on the shore (a traverse or triangulation) to fix the position of everything else.'],['Vertical control','Run levels to a bench mark and set the tide gage, so every depth refers to one datum.'],['Topographic survey','Map the shoreline and shore features, tying them to the control.'],['Hydrography','The soundings: take depths from the boat and locate each one.'],['Hydrographic map','Plot the soundings and shore, and draw the depth contours on the chart.']];
+  h0.innerHTML=`<h3>The six operations in order</h3>${chipsHTML(steps.map((s,i)=>[i+1,(i+1)+' '+s[0]]),sel)}<p style="margin:6px 0"><button type="button" class="btn" id="vo-play">▶ Play</button></p><div class="out"><div id="vo-fig"></div><div class="card" id="vo-t"></div></div>`;
+  const draw=()=>{
+    const o=n=>`opacity="${sel===n?1:.18}"`;
+    $('#vo-fig').innerHTML=`<svg class="plot" viewBox="0 0 400 230" role="img" aria-label="Survey scene for step ${sel}: ${steps[sel-1][0]}">
+    <rect x="0" y="0" width="400" height="80" fill="${'var(--c3)'}" opacity=".22"/><rect x="0" y="80" width="400" height="150" fill="${BL}" opacity=".2"/>
+    <path d="M0 80 Q40 66 90 80 T200 78 T310 82 T400 76" fill="none" stroke="var(--ink)" stroke-width="2"/>
+    <g ${o(1)}><rect x="6" y="6" width="388" height="218" fill="none" stroke="${AC}" stroke-width="3" stroke-dasharray="8 6"/><text x="200" y="22" font-size="12" text-anchor="middle">look the whole area over</text></g>
+    <g ${o(2)}><path d="M70 30L82 52H58Z M310 34L322 56H298Z M70 30L310 34" fill="${AC}" stroke="${AC}" stroke-width="2"/><text x="70" y="68" font-size="11" text-anchor="middle">A</text><text x="310" y="72" font-size="11" text-anchor="middle">B</text><text x="190" y="26" font-size="11">control line</text></g>
+    <g ${o(3)}><rect x="180" y="62" width="8" height="46" fill="var(--paper)" stroke="var(--ink)" stroke-width="2"/><path d="M180 72h8M180 82h8M180 92h8" stroke="var(--ink)"/><text x="196" y="72" font-size="11">tide gage</text><circle cx="140" cy="50" r="5" fill="${AC}"/><text x="102" y="42" font-size="11">bench mark</text></g>
+    <g ${o(4)}>${[30,80,130,180,230,280,330,370].map((x,i)=>`<circle cx="${x}" cy="${[75,82,78,80,77,84,79,78][i]}" r="4" fill="${AC}"/>`).join('')}<text x="12" y="56" font-size="11">shoreline detail</text></g>
+    <g ${o(5)}><path d="M150 112l16 14h50l16-14z" fill="var(--paper)" stroke="var(--ink)" stroke-width="2"/><path d="M190 126V190" stroke="var(--ink)" stroke-width="2" stroke-dasharray="4 3"/><circle cx="190" cy="190" r="5" fill="${AC}"/><text x="200" y="164" font-size="11">sounding</text>${[60,110,260,310,350].map((x,i)=>`<path d="M${x} 130V${[170,185,180,160,150][i]}" stroke="var(--ink)" stroke-dasharray="3 3"/><circle cx="${x}" cy="${[170,185,180,160,150][i]}" r="3" fill="${AC}"/>`).join('')}</g>
+    <g ${o(6)}><rect x="250" y="130" width="130" height="86" fill="var(--paper)" stroke="var(--ink)" stroke-width="2"/><path d="M262 200C290 160 330 190 368 142M262 178C285 148 318 168 368 124" fill="none" stroke="${AC}" stroke-width="1.8"/><text x="262" y="150" font-size="10">12</text><text x="310" y="196" font-size="10">8</text><text x="340" y="148" font-size="10">5</text></g>
+    </svg>`;
+    $('#vo-t').innerHTML=`<b>${sel}. ${steps[sel-1][0]}</b><p style="margin:.3em 0 0">${steps[sel-1][1]}</p>`;
+    $$('.chip',h0).forEach(x=>x.classList.toggle('on',+x.dataset.k===sel));
+  };
+  $$('.chip',h0).forEach(b=>b.addEventListener('click',()=>{sel=+b.dataset.k;stop();draw()}));
+  const stop=()=>{if(timer){clearInterval(timer);timer=null;$('#vo-play').textContent='▶ Play'}};
+  $('#vo-play').addEventListener('click',()=>{if(timer){stop();return}$('#vo-play').textContent='■ Stop';timer=setInterval(()=>{sel=sel%6+1;draw()},1600)});
+  draw();
+}
+
+/* 6. ways of locating soundings */
+function vizLoc(){
+  const h0=$('#vLoc');h0.classList.add('viz');let sel='rope';
+  const land=`<rect x="0" y="0" width="400" height="56" fill="var(--c3)" opacity=".22"/><rect x="0" y="56" width="400" height="174" fill="${BL}" opacity=".2"/><path d="M0 56H400" stroke="var(--ink)" stroke-width="2"/>`;
+  const boat=(x,y)=>`<path d="M${x-12} ${y-5}l5 9h14l5-9z" fill="var(--paper)" stroke="var(--ink)" stroke-width="2"/>`;
+  const dot=(x,y)=>`<circle cx="${x}" cy="${y}" r="4" fill="${AC}"/>`;
+  const tr=(x,y)=>`<path d="M${x} ${y-9}l8 14h-16z" fill="var(--ink)"/>`;
+  const M={
+   rope:{n:'Cross rope',use:'Most accurate. Rivers, narrow lakes, harbours, and finding dredged quantities.',t:'A rope is stretched across the channel and tagged at known distances. The boat follows it and sounds at each tag. This is Lab 9.',svg:`<rect x="0" y="0" width="52" height="230" fill="var(--c3)" opacity=".22"/><rect x="348" y="0" width="52" height="230" fill="var(--c3)" opacity=".22"/><rect x="52" y="0" width="296" height="230" fill="${BL}" opacity=".2"/><path d="M52 0V230M348 0V230" stroke="var(--ink)" stroke-width="2"/><path d="M40 115H360" stroke="var(--ink)" stroke-width="2.5"/>${tr(46,115)}${tr(354,115)}${[92,132,172,212,252,292,332].map(x=>`<path d="M${x} 108v14" stroke="${AC}" stroke-width="3"/>`).join('')}${boat(212,98)}${dot(212,140)}<text x="52" y="22" font-size="11">RWE</text><text x="300" y="22" font-size="11">LWE</text><text x="120" y="170" font-size="11">tags at known distances</text>`},
+   time:{n:'Range and time',use:'Narrow channels where great accuracy is not needed.',t:'The boat is kept on a line of two shore signals and rowed at constant speed. A sounding is taken at equal time intervals, so the spacing is the same.',svg:`${land}<path d="M200 30V220" stroke="${MU}" stroke-width="1.6" stroke-dasharray="6 4"/>${tr(200,32)}${tr(200,50)}<text x="214" y="30" font-size="11">range signals</text>${boat(200,110)}${[80,110,140,170,200].map((y,i)=>dot(200,y+ (i>0?10:0)).replace('cy="'+(y+(i>0?10:0))+'"','cy="'+(80+i*28)+'"')).join('')}<text x="216" y="84" font-size="11">t</text><text x="216" y="112" font-size="11">2t</text><text x="216" y="140" font-size="11">3t</text><text x="216" y="168" font-size="11">4t</text>`},
+   angle:{n:'Range and angle from shore',use:'When the boat stays on a range and an instrument on shore can read the angle.',t:'The boat runs along a range. An instrument on shore reads the angle between the shore baseline and the boat, so each sounding is fixed. Keep the angle at the sounding point over 30°.',svg:`${land}<path d="M250 30V220" stroke="${MU}" stroke-width="1.6" stroke-dasharray="6 4"/>${tr(250,34)}<path d="M80 40H250" stroke="var(--ink)" stroke-width="2"/>${tr(80,40).replace('fill="var(--ink)"','fill="'+AC+'"')}<text x="46" y="52" font-size="11">instrument</text><path d="M80 40L250 150" stroke="${AC}" stroke-width="2.5"/><path d="M118 40A38 38 0 0 1 112 62" stroke="${AC}" stroke-width="2.5" fill="none"/><text x="124" y="60" font-size="13" fill="${AC}">θ</text>${boat(250,150)}${dot(250,164)}<text x="262" y="110" font-size="11">range</text>`},
+   two:{n:'Two angles from the boat',use:'Open water with three known shore objects.',t:'Two sextant angles from the boat to three known shore objects fix the position by the three-point problem.',svg:`${land}${tr(80,40)}${tr(200,40)}${tr(320,40)}<text x="76" y="26" font-size="12">A</text><text x="196" y="26" font-size="12">B</text><text x="316" y="26" font-size="12">C</text><path d="M200 150L80 49M200 150L200 49M200 150L320 49" stroke="${MU}" stroke-width="1.6"/><path d="M178 128A28 28 0 0 1 200 122" stroke="${AC}" stroke-width="2.5" fill="none"/><path d="M200 122A28 28 0 0 1 222 128" stroke="${BL}" stroke-width="2.5" fill="none"/><text x="168" y="118" font-size="13" fill="${AC}">α</text><text x="222" y="118" font-size="13" fill="${BL}">β</text>${boat(200,150)}${dot(200,164)}`}
+  };
+  h0.innerHTML=`<h3>Four ways to locate a sounding</h3>${chipsHTML(Object.entries(M).map(([k,v])=>[k,v.n]),sel)}<div class="out"><div id="vl-fig"></div><div><div class="card" id="vl-t"></div><div class="ans" id="vl-a"></div></div></div>`;
+  const draw=()=>{$('#vl-fig').innerHTML=`<svg class="plot" viewBox="0 0 400 230" role="img" aria-label="${M[sel].n}">${M[sel].svg}</svg>`;$('#vl-t').innerHTML=M[sel].t;$('#vl-a').innerHTML='Good for: '+M[sel].use};
+  $$('.chip',h0).forEach(b=>b.addEventListener('click',()=>{sel=b.dataset.k;$$('.chip',h0).forEach(x=>x.classList.toggle('on',x===b));draw()}));draw();
+}
+
+/* 7. walking the rope (Lab 9) */
+function vizRope(){
+  const h0=$('#vRope');h0.classList.add('viz');
+  const d=[1.2,1.8,2.5,2.1,1.6,0.9],xs=[0,10,15,20,25,30,35,40],ds=[0,...d,0],names=['A','B','C','D','E','F','G'];
+  h0.innerHTML=`<h3>Take the soundings along the rope</h3><div class="ctl">${sliderHTML('vr-n','Sections measured',0,7,1,0)}</div><div class="out"><div id="vr-fig"></div><div><div class="work" id="vr-w"></div><div class="ans" id="vr-a"></div></div></div>`;
+  const draw=()=>{const n=+$('#vr-n').value;$('#vr-n-v').textContent=n+' of 7';
+    const W=40,w=400,h=200,L=14,Rr=14,T=40,B=14,X=x=>L+x/W*(w-L-Rr),Y=q=>T+q/3*(h-T-B);
+    let poly='',tot=0,rows='';
+    if(n>0){const px=xs.slice(0,n+1).map((x,i)=>X(x)+','+Y(ds[i]));poly=`<polygon points="${X(0)},${Y(0)} ${px.join(' ')} ${X(xs[n])},${Y(0)}" fill="${BL}" opacity=".4" stroke="${BL}" stroke-width="2"/>`}
+    for(let k=0;k<n;k++){const l=xs[k+1]-xs[k],A=.5*l*(ds[k]+ds[k+1]);tot+=A;rows+=`<div>A<sub>${names[k]}</sub> = ½(${l})(${f(ds[k],1)} + ${f(ds[k+1],1)}) = ${f(A)} m²</div>`}
+    const bx=X(xs[n]);
+    $('#vr-fig').innerHTML=`<svg class="plot" viewBox="0 0 ${w} ${h}" role="img" aria-label="Boat has measured ${n} of 7 sections">
+    <rect x="0" y="${Y(0)}" width="${w}" height="${h-Y(0)}" fill="${BL}" opacity=".08"/>${poly}
+    <path d="M${X(0)-6} ${Y(0)}H${X(W)+6}" stroke="var(--ink)" stroke-width="2.5"/>
+    ${xs.map((x,i)=>`<path d="M${X(x)} ${Y(0)-6}v12" stroke="${AC}" stroke-width="3"/>${i>0&&i<7&&i<=n?`<path d="M${X(x)} ${Y(0)}V${Y(ds[i])}" stroke="var(--ink)" stroke-dasharray="3 3"/><text x="${X(x)}" y="${Y(ds[i])+13}" font-size="10" text-anchor="middle">${f(ds[i],1)}</text>`:''}`).join('')}
+    <path d="M${bx-14} ${Y(0)-24}l6 12h16l6-12z" fill="var(--paper)" stroke="var(--ink)" stroke-width="2"/>
+    <text x="${X(0)}" y="16" font-size="11">RWE</text><text x="${X(W)}" y="16" font-size="11" text-anchor="end">LWE</text><text x="${w/2}" y="16" font-size="11" text-anchor="middle">rope, tagged at the sounding points</text></svg>`;
+    $('#vr-w').innerHTML=rows||'<div style="color:var(--muted)">Move the slider to send the boat along the rope from the RWE.</div>';
+    $('#vr-a').innerHTML=`<div>Area so far = <b>${f(tot)} m²</b></div>${n===7?'<div>Total A = 53.50 m² ✓</div>':''}`};
+  h0.addEventListener('input',draw);draw();
+}
+
+/* ---------- full screen ---------- */
+(function(){
+  const root=document.documentElement,btn=$('#fs');
+  const req=root.requestFullscreen||root.webkitRequestFullscreen,ex=document.exitFullscreen||document.webkitExitFullscreen;
+  const isFS=()=>!!(document.fullscreenElement||document.webkitFullscreenElement);
+  const sync=()=>{const on=isFS()||document.body.classList.contains('pres');document.body.classList.toggle('fs',on);btn.textContent=on?'✕ Exit full screen':'⛶ Full screen'};
+  window.toggleFS=()=>{
+    if(req){if(isFS())ex.call(document);else{const p=req.call(root);if(p&&p.catch)p.catch(()=>{document.body.classList.toggle('pres');sync()})}}
+    else{document.body.classList.toggle('pres');sync()}};
+  btn.addEventListener('click',toggleFS);
+  document.addEventListener('fullscreenchange',sync);document.addEventListener('webkitfullscreenchange',sync);
+  document.addEventListener('keydown',e=>{if(e.target.closest&&e.target.closest('input,textarea'))return;
+    if(e.key==='f'||e.key==='F'){e.preventDefault();toggleFS()}
+    else if(e.key==='Escape'&&document.body.classList.contains('pres')){document.body.classList.remove('pres');sync()}});
+  sync();
+})();
+
+/* ---------- slides ---------- */
+const slides=[];
+const S=(html,init)=>slides.push({html,init});
+const FORMULA=`<div class="formula"><div><i class="v">T</i> = <i class="v">R</i> tan(<i class="v">I</i>/2)</div><div><i class="v">L<sub>c</sub></i> = <i class="v">R I</i> (<i class="v">I</i> in radians)</div><div><i class="v">LC</i> = 2<i class="v">R</i> sin(<i class="v">I</i>/2)</div><div><i class="v">E</i> = <i class="v">R</i>(sec(<i class="v">I</i>/2) − 1)</div><div><i class="v">M</i> = <i class="v">R</i>(1 − cos(<i class="v">I</i>/2))</div></div>`;
+
+S(`<div class="in hero"><div class="kick">CSURV2210 Higher Surveying · CSURV221P Lab</div><h1>Compound curves<br>and hydrographic surveying</h1><p>Two topics, eight interactive worked problems and seven interactive explanations. Drag the sliders to change a given value and watch the working and the answer change with it.</p><div class="card"><b>By the end you can</b><ul><li>name the parts of a compound curve and compute each arc with the Lab 10 formulas</li><li>find the stations of the PC, PCC and PT, and a stake-out table of deflection angles and chords</li><li>reduce a Lab 9 stream cross-section to areas and a total discharge Q</li></ul></div><p class="note">Use the arrow keys, swipe, or the buttons below. Numbers come from the lab manual (2025-2026 edition): Lab 10 (simple curve by chord deflection) and Lab 9 (stream gaging).</p></div>`);
+
+S(`<div class="in"><div class="kick">Part A · Compound curves</div><h2>Recap: the simple curve (Lab 10)</h2><div class="grid2"><div><p>Every arc of a compound curve is a simple curve. Lab 10 gives the elements:</p><ul><li><b>PC, PT</b>: beginning and end of the curve</li><li><b>PI</b>: where the tangents meet</li><li><b>R, I</b>: radius and central (deflection) angle</li><li><b>T</b> tangent, <b>L<sub>c</sub></b> arc, <b>LC</b> long chord, <b>E</b> external, <b>M</b> middle ordinate</li></ul></div><div>${FORMULA}<p>Stationing: <i class="v">PC</i> = <i class="v">PI</i> − <i class="v">T</i>, <i class="v">PT</i> = <i class="v">PC</i> + <i class="v">L<sub>c</sub></i>.</p></div></div><p class="note">Lab 10 stakes the curve by the chord deflection method: set up at the PC, zero on the back tangent, then turn the deflection angle and measure the chord from the last stake.</p><div id="vSimple"></div></div>`,()=>vizSimple());
+
+S(`<div class="in"><div class="kick">Part A · Compound curves</div><h2>How the deflection angle works</h2><p>Staking by chord deflection rests on one fact: the angle between a tangent and a chord is <b>half</b> the central angle on the same arc. Slide the point along the curve and watch δ stay half of φ.</p><div id="vDefl"></div></div>`,()=>vizDefl());
+
+S(`<div class="in"><div class="kick">Part A · Compound curves</div><h2>Simple, compound, reverse</h2><div class="grid2"><div class="card"><h3>Simple</h3><p>One arc, one radius, one centre.</p></div><div class="card"><h3>Compound</h3><p>Two or more consecutive arcs of <b>different radii</b> bending the <b>same way</b>. Their centres lie on the <b>same side</b> of the common tangent.</p></div></div><div class="card" style="margin-top:12px"><h3>Reverse</h3><p>Two arcs bending in <b>opposite</b> directions, centres on opposite sides of the common tangent. We only name it here.</p></div><p>Why use a compound curve? A road can swing wide at a gentle radius, then tighten to fit the terrain, without a straight piece between.</p><div id="vTypes"></div></div>`,()=>vizTypes());
+
+S(`<div class="in"><div class="kick">Part A · Compound curves</div><h2>Anatomy of a compound curve</h2><div class="grid2"><div><ul><li><b>PC</b>: start of the first arc</li><li><b>PCC</b>: point of compound curvature, where arc 1 meets arc 2</li><li><b>PT</b>: end of the second arc</li><li><b>R<sub>1</sub>, I<sub>1</sub></b> and <b>R<sub>2</sub>, I<sub>2</sub></b>: radius and central angle of each arc</li><li>The total deflection angle is <b>I = I<sub>1</sub> + I<sub>2</sub></b></li></ul>
+<div class="formula"><div><i class="v">L<sub>1</sub></i> = <i class="v">R<sub>1</sub> I<sub>1</sub></i></div><div><i class="v">L<sub>2</sub></i> = <i class="v">R<sub>2</sub> I<sub>2</sub></i></div><div><i class="v">PCC</i> = <i class="v">PC</i> + <i class="v">L<sub>1</sub></i></div><div><i class="v">PT</i> = <i class="v">PCC</i> + <i class="v">L<sub>2</sub></i></div></div></div><div id="anat"></div></div><p class="note">The two arcs share the radius line through the PCC: O₁, the PCC and O₂ lie on one straight line, because both arcs have the same tangent there.</p></div>`,
+ ()=>vizAnat());
+
+S(`<div class="in"><div class="kick">Part A · Problem 1 of 4</div><h2>The two arcs</h2><div id="pA1"></div></div>`,()=>{
+  problem($('#pA1'),{id:'a1',tag:'Interactive',title:'Elements of each arc',
+   given:'A compound curve has R₁ = 300 m, I₁ = 30° and R₂ = 200 m, I₂ = 40°. Find T, L<sub>c</sub> and LC for each arc and the total length.',
+   inputs:[{k:'R1',label:'R₁',min:100,max:600,step:10,v:300,unit:'m'},{k:'I1',label:'I₁',min:10,max:80,step:1,v:30,unit:'°'},{k:'R2',label:'R₂',min:100,max:600,step:10,v:200,unit:'m'},{k:'I2',label:'I₂',min:10,max:80,step:1,v:40,unit:'°'}],
+   render:v=>{const a=CALC.arc(v.R1,v.I1),b=CALC.arc(v.R2,v.I2);
+    return{work:`<div><b>Arc 1</b></div><div>T₁ = ${v.R1} tan(${v.I1}°/2) = ${f(a.t)} m</div><div>L₁ = ${v.R1}(${v.I1}° × π/180) = ${f(a.L)} m</div><div>LC₁ = 2(${v.R1}) sin(${v.I1}°/2) = ${f(a.LC)} m</div><div style="margin-top:6px"><b>Arc 2</b></div><div>T₂ = ${v.R2} tan(${v.I2}°/2) = ${f(b.t)} m</div><div>L₂ = ${v.R2}(${v.I2}° × π/180) = ${f(b.L)} m</div><div>LC₂ = 2(${v.R2}) sin(${v.I2}°/2) = ${f(b.LC)} m</div>`,
+     ans:`<div>L = L₁ + L₂ = ${f(a.L)} + ${f(b.L)}</div><div><b>L = ${f(a.L+b.L)} m</b> · I = ${v.I1+v.I2}°</div>`,fig:compoundSVG(v.R1,v.I1,v.R2,v.I2)}}});
+});
+
+S(`<div class="in"><div class="kick">Part A · Problem 2 of 4</div><h2>Stationing the curve</h2><div id="pA2"></div></div>`,()=>{
+  problem($('#pA2'),{id:'a2',tag:'Interactive',title:'Stations of the PC, PCC and PT',
+   given:'The PC is at station 1+200.00. Use the arcs of Problem 1 (R₁ = 300 m, I₁ = 30°, R₂ = 200 m, I₂ = 40°). Find the stations of the PCC and the PT. Then change the PC station or an arc.',
+   inputs:[{k:'pc',label:'PC station (m)',min:800,max:2400,step:10,v:1200,unit:'m',dp:0},{k:'R1',label:'R₁',min:100,max:600,step:10,v:300,unit:'m'},{k:'I1',label:'I₁',min:10,max:80,step:1,v:30,unit:'°'},{k:'R2',label:'R₂',min:100,max:600,step:10,v:200,unit:'m'},{k:'I2',label:'I₂',min:10,max:80,step:1,v:40,unit:'°'}],
+   render:v=>{const a=CALC.arc(v.R1,v.I1),b=CALC.arc(v.R2,v.I2),pcc=v.pc+a.L,pt=pcc+b.L;
+    return{work:`<div>PC = ${stn(v.pc)}</div><div>L₁ = ${f(a.L)} m</div><div>PCC = PC + L₁ = ${f(v.pc)} + ${f(a.L)} = ${stn(pcc)}</div><div>L₂ = ${f(b.L)} m</div><div>PT = PCC + L₂ = ${f(pcc)} + ${f(b.L)}</div>`,
+     ans:`<div>PCC = <b>${stn(pcc)}</b></div><div>PT = <b>${stn(pt)}</b></div>`,
+     fig:`<div class="card"><table><tr><th>Point</th><th>Station</th><th>Chainage (m)</th></tr><tr><td>PC</td><td>${stn(v.pc)}</td><td>${f(v.pc)}</td></tr><tr><td>PCC</td><td>${stn(pcc)}</td><td>${f(pcc)}</td></tr><tr><td>PT</td><td>${stn(pt)}</td><td>${f(pt)}</td></tr></table><p class="note" style="margin:8px 0 0">Station 1+200.00 means 1 km + 200.00 m = 1200.00 m.</p></div>`}}});
+});
+
+S(`<div class="in"><div class="kick">Part A · Problem 3 of 4</div><h2>Staking out, Lab 10 style</h2><div id="pA3"></div></div>`,()=>{
+  problem($('#pA3'),{id:'a3',tag:'Interactive',title:'Deflection angles and chords',
+   given:'Same curve, PC at 1+200.00. Lay out arc 1 from the PC and arc 2 from the PCC by the chord deflection method. Choose the station interval; each stake is found by turning the deflection angle and measuring the chord from the previous stake.',
+   inputs:[{k:'s',label:'Station interval',min:5,max:40,step:5,v:20,unit:'m',dp:0},{k:'R1',label:'R₁',min:100,max:600,step:10,v:300,unit:'m'},{k:'R2',label:'R₂',min:100,max:600,step:10,v:200,unit:'m'}],
+   render:v=>{const I1=30,I2=40,pc=1200,a=CALC.arc(v.R1,I1),b=CALC.arc(v.R2,I2),pcc=pc+a.L;
+    const t1=CALC.stake(pc,a.L,v.R1,v.s),t2=CALC.stake(pcc,b.L,v.R2,v.s);
+    const row=(r,n,p)=>`<tr><td>${stn(r.sta)}</td><td>${p}</td><td>${dms(r.defl)}</td><td>${r.d?f(r.chord,3):'-'}</td></tr>`;
+    const tab=(t,s,e)=>t.map((r,i)=>row(r,i,i===0?s:i===t.length-1?e:'')).join('');
+    const l1=t1[t1.length-1],l2=t2[t2.length-1];
+    return{work:`<div>δ = (arc length from the start) / 2R, in radians</div><div>chord = 2R sin(Δl / 2R), from the last stake</div><div>Arc 1: last deflection = ${dms(l1.defl)} = I₁/2 = ${I1/2}° ✓</div><div>Arc 2: last deflection = ${dms(l2.defl)} = I₂/2 = ${I2/2}° ✓</div><div>The two arcs are staked from different set-ups (PC, then PCC).</div>`,
+     ans:`<div>Arc 1: ${t1.length-1} chords from the PC</div><div>Arc 2: ${t2.length-1} chords from the PCC</div><div>(I₁ = 30°, I₂ = 40°)</div>`,
+     fig:`<div class="tablewrap"><table><tr><th>Station</th><th>Point</th><th>Deflection</th><th>Chord (m)</th></tr>${tab(t1,'PC','PCC')}<tr><th colspan="4">Set up at the PCC</th></tr>${tab(t2,'PCC','PT')}</table></div>`}}});
+});
+
+S(`<div class="in"><div class="kick">Part A · Problem 4 of 4</div><h2>What if R₂ changes?</h2><div id="pA4"></div></div>`,()=>{
+  problem($('#pA4'),{id:'a4',tag:'Interactive',title:'Sensitivity of the length',
+   given:'Keep arc 1 (R₁ = 300 m, I₁ = 30°) and the second arc angle I₂ = 40°. Slide R₂ and see how L₂, the PT station and the total length respond. PC = 1+200.00.',
+   inputs:[{k:'R2',label:'R₂',min:100,max:500,step:10,v:200,unit:'m'},{k:'I2',label:'I₂',min:10,max:80,step:1,v:40,unit:'°'}],
+   render:v=>{const a=CALC.arc(300,30),b=CALC.arc(v.R2,v.I2),pcc=1200+a.L,pt=pcc+b.L;
+    const xs=[],ys=[];for(let r=100;r<=500;r+=20){xs.push(r);ys.push(a.L+CALC.arc(r,v.I2).L)}
+    return{work:`<div>L₂ = R₂ I₂ = ${v.R2}(${v.I2}° × π/180) = ${f(b.L)} m</div><div>PT = PCC + L₂ = ${f(pcc)} + ${f(b.L)}</div><div>Doubling R₂ doubles L₂, because L = R I.</div>`,
+     ans:`<div>L₂ = <b>${f(b.L)} m</b></div><div>PT = <b>${stn(pt)}</b></div><div>Total L = <b>${f(a.L+b.L)} m</b></div>`,
+     fig:lineChart(xs,ys,v.R2,a.L+b.L,'R₂ (m)','Total L (m)')}}});
+});
+
+S(`<div class="in"><div class="kick">Part A · Check yourself</div><h2>Mini quiz</h2>
+<div class="qz"><b>1.</b> A compound curve has I₁ = 25° and I₂ = 35°. What is the total deflection angle I?<br><button class="btn" type="button">Show answer</button><div class="ans2">I = I₁ + I₂ = 60°.</div></div>
+<div class="qz"><b>2.</b> Arc 1 has R = 250 m, I = 36°. How long is it?<br><button class="btn" type="button">Show answer</button><div class="ans2">L = 250 × 36° × π/180 = 157.08 m.</div></div>
+<div class="qz"><b>3.</b> Do the centres of a compound curve lie on the same side or opposite sides of the common tangent?<br><button class="btn" type="button">Show answer</button><div class="ans2">The same side. Opposite sides would make it a reverse curve.</div></div></div>`,()=>{
+  $$('.qz .btn').forEach(b=>b.addEventListener('click',()=>b.closest('.qz').classList.toggle('show')))});
+
+S(`<div class="in"><div class="kick">Part B · Hydrographic surveying</div><h2>What it is and how it runs</h2><div class="grid2"><div><p>Hydrographic surveying studies, describes and maps oceans, seas, lakes and rivers. Its uses include nautical charts, flood control, water supply, hydroelectric power, irrigation, pipeline crossings and dredging.</p><h3>Six field operations</h3><ol><li>Reconnaissance</li><li>Horizontal control</li><li>Vertical control</li><li>Topographic survey of the shore</li><li>Hydrography (the soundings)</li><li>Preparation of the hydrographic map</li></ol></div><div><div class="card"><b>Datum.</b> A depth means nothing without a reference level. The tide gage and the vertical control fix the datum from which every sounding is measured.</div><div class="card" style="margin-top:10px"><b>Sounding</b> is measuring the depth at a point. <b>Stream gaging</b> measures in streams and rivers to predict the discharge. <b>Discharge</b> is the volume of water passing a section per unit time.</div></div></div><div id="vOps"></div></div>`,()=>vizOps());
+
+S(`<div class="in"><div class="kick">Part B · Hydrographic surveying</div><h2>Equipment and locating soundings</h2><div class="grid2"><div><h3>Instruments</h3><ul><li><b>Sounding pole or rod</b>: shallow, quiet water</li><li><b>Lead line</b>: depths over about 6 m, weight of 4 to 12 kg</li><li><b>Sounding machine</b>: weighted wire on a drum</li><li><b>Fathometer</b>: echo sounder, timing a pulse from the bottom</li></ul><h3>Sounding party</h3><p>Chief of party, instrument man, recorder, leadman, coxswain, lookout, signalman, fathometer attendant.</p></div><div><h3>Locating the soundings</h3><ul><li><b>Cross rope</b>: the most accurate; rivers, narrow lakes, harbours</li><li><b>Range and time intervals</b></li><li><b>Range and angle from shore</b></li><li><b>Two angles from the boat</b></li></ul><p class="note">Lab 9 uses the cross rope: a graduated rope from the right water edge (RWE) to the left water edge (LWE), tagged every few metres.</p></div></div><div id="vLoc"></div></div>`,()=>vizLoc());
+
+S(`<div class="in"><div class="kick">Part B · Problem 1 of 3</div><h2>Fathoms to feet and metres</h2><div id="pB1"></div></div>`,()=>{
+  problem($('#pB1'),{id:'b1',tag:'Interactive',title:'Unit conversion',
+   given:'A sounding reads 12 fathoms. Convert it to feet and to metres (1 fathom = 6 ft, 1 ft = 0.3048 m). Change the reading.',
+   inputs:[{k:'fm',label:'Sounding',min:0.5,max:60,step:0.5,v:12,unit:'fathoms',dp:1}],
+   render:v=>{const r=CALC.fathom(v.fm);
+    return{work:`<div>ft = ${f(v.fm,1)} × 6 = ${f(r.ft,1)} ft</div><div>m = ${f(r.ft,1)} × 0.3048 = ${f(r.m,3)} m</div><div>1 fathom = 1.8288 m</div>`,
+     ans:`<div><b>${f(v.fm,1)} fathoms = ${f(r.ft,1)} ft = ${f(r.m,2)} m</b></div>`,
+     fig:`<svg class="plot" viewBox="0 0 400 200" role="img" aria-label="Depth bar of ${f(r.m,1)} metres"><rect x="40" y="20" width="120" height="${Math.min(170,r.m/110*170)}" fill="var(--c1)" opacity=".5" stroke="var(--c1)"/><text x="170" y="${20+Math.min(170,r.m/110*170)/2}" font-size="13">${f(r.m,1)} m</text><text x="40" y="14" font-size="11">surface</text></svg>`}}});
+});
+
+S(`<div class="in"><div class="kick">Part B · Lab 9 set-up</div><h2>Stream gaging by cross-section</h2><div class="grid2"><div><ol><li>Fix range poles at the right and left water edges (RWE, LWE) and stretch the rope.</li><li>Tag it, then move the boat along the rope taking soundings at each tag.</li><li>Measure the velocity along each partial section (floats).</li><li>The section is a row of trapezoids, with a triangle at each end.</li></ol></div><div><div class="formula"><div><i class="v">A<sub>A</sub></i> = ½ <i class="v">l<sub>1</sub> d<sub>1</sub></i> (end triangle)</div><div><i class="v">A<sub>B</sub></i> = ½ <i class="v">l<sub>2</sub></i>(<i class="v">d<sub>1</sub> + d<sub>2</sub></i>)</div><div>… and so on to …</div><div><i class="v">A<sub>G</sub></i> = ½ <i class="v">l<sub>7</sub> d<sub>6</sub></i></div><div><i class="v">q</i> = <i class="v">A v</i> for each section</div><div><i class="v">Q</i> = Σ <i class="v">q</i></div></div></div></div><p class="note">Lab 9 data: soundings at 10, 15, 20, 25, 30, 35 m from the RWE, with the LWE at 40 m. So the end sections are 10 m and 5 m long and the middle ones 5 m.</p><div id="vRope"></div></div>`,()=>vizRope());
+
+const HY={d:[1.2,1.8,2.5,2.1,1.6,0.9],v:[0.75,1.5,1.9,2.5,1.5,0.8,0],a:10,i:5};
+const NAMES=['A','B','C','D','E','F','G'];
+let B2,B3;
+const refreshHy=()=>{B2&&B2.upd();B3&&B3.upd()};
+S(`<div class="in"><div class="kick">Part B · Problem 2 of 3</div><h2>The cross-section</h2><div id="pB2"></div></div>`,()=>{
+  B2=problem($('#pB2'),{id:'b2',tag:'Interactive',title:'Partial areas from the soundings',
+   given:'Lab 9 soundings: 1.2, 1.8, 2.5, 2.1, 1.6 and 0.9 m at 10, 15, 20, 25, 30 and 35 m from the RWE, with the LWE at 40 m. Change any depth, the first length or the rope interval.',
+   inputs:[...HY.d.map((x,k)=>({k:'d'+k,label:'d'+(k+1),min:0,max:5,step:0.1,v:x,unit:'m',dp:1})),{k:'a',label:'First length (RWE to d₁)',min:2,max:15,step:1,v:10,unit:'m',dp:0},{k:'i',label:'Rope interval',min:2,max:10,step:1,v:5,unit:'m',dp:0}],
+   after:()=>{B3&&B3.upd()},
+   render:v=>{const d=[0,1,2,3,4,5].map(k=>v['d'+k]);Object.assign(HY,{d,a:v.a,i:v.i});
+    const r=CALC.stream(d,HY.v,v.a,v.i);
+    const w=r.A.map((A,k)=>{const l=r.l[k];return`<div>A<sub>${NAMES[k]}</sub> = ${k===0?`½(${l})(${f(d[0],1)})`:k===6?`½(${l})(${f(d[5],1)})`:`½(${l})(${f(d[k-1],1)} + ${f(d[k],1)})`} = ${f(A)} m²</div>`}).join('');
+    return{work:w,ans:`<div>A = ΣA = <b>${f(r.At)} m²</b></div><div>Width = ${r.W} m</div>`,fig:crossSection(d,r.l,r.W)}}});
+});
+
+S(`<div class="in"><div class="kick">Part B · Problem 3 of 3</div><h2>Discharge of the stream</h2><div id="pB3"></div></div>`,()=>{
+  B3=problem($('#pB3'),{id:'b3',tag:'Interactive',title:'Partial discharges and total Q',
+   given:'Lab 9 velocities along sections A to G: 0.75, 1.5, 1.9, 2.5, 1.5, 0.8 and 0 m/s. Section C has two readings in the sheet, 1.8 m/s and 2.0 m/s, so 1.9 m/s (their mean) is used. The areas come from Problem 2, so change a depth there and come back.',
+   inputs:HY.v.map((x,k)=>({k:'v'+k,label:'v'+NAMES[k],min:0,max:3.5,step:0.05,v:x,unit:'m/s',dp:2})),
+   render:v=>{const vv=[0,1,2,3,4,5,6].map(k=>v['v'+k]);
+    const r=CALC.stream(HY.d,vv,HY.a,HY.i);
+    const w=r.q.map((q,k)=>`<div>q<sub>${NAMES[k]}</sub> = ${f(r.A[k])} × ${f(vv[k],2)} = ${f(q)} m³/s</div>`).join('');
+    return{work:w,ans:`<div>Q = Σq = <b>${f(r.Q,1)} m³/s</b></div><div>Mean velocity = Q/A = ${f(r.vm)} m/s</div>`,fig:barChart(r.q,NAMES,'m³/s')}}});
+});
+
+S(`<div class="in"><div class="kick">Summary</div><h2>Formula sheet</h2><div class="grid2"><div><h3>Compound curve</h3><div class="formula"><div>I = I₁ + I₂</div><div>T = R tan(I/2) for each arc</div><div>L = R I (radians)</div><div>LC = 2R sin(I/2)</div><div>PCC = PC + L₁</div><div>PT = PCC + L₂</div><div>δ = l / 2R · chord = 2R sin(Δl / 2R)</div></div></div><div><h3>Stream gaging (Lab 9)</h3><div class="formula"><div>A = ½ l (d₁ + d₂), end triangles ½ l d</div><div>q = A v</div><div>Q = Σ q</div><div>v̄ = Q / A</div><div>1 fathom = 6 ft = 1.8288 m</div></div></div></div><p class="note">Source notes: Lab 10 gives the simple-curve elements and chord deflection method; the class slides only define the compound curve, so each arc is worked with the same formulas. Lab 9 supplies the stream formulas. The sample soundings and velocities (1.2 m to 0.9 m, 0.75 to 0 m/s) come from the earlier edition of the lab sheet; the 2025-2026 sheet leaves its data tables blank, so your instructor supplies the numbers.</p></div>`);
+
+/* ---------- navigation ---------- */
+const deck=$('#deck');let cur=0;
+slides.forEach((s,i)=>{const el=document.createElement('section');el.className='slide';el.innerHTML=s.html;deck.appendChild(el);s.el=el;s.ready=false;
+  const dot=document.createElement('i');dot.title='Slide '+(i+1);dot.addEventListener('click',()=>go(i));$('#dots').appendChild(dot)});
+function show(n,push){
+  cur=Math.max(0,Math.min(slides.length-1,n));
+  slides.forEach((s,i)=>s.el.classList.toggle('on',i===cur));
+  const s=slides[cur];if(!s.ready){s.ready=true;if(s.init)s.init()}
+  s.el.scrollTop=0;s.el.querySelectorAll('.prob').forEach(p=>p.dispatchEvent(new Event('enter')));
+  $('#ctr').textContent=(cur+1)+' / '+slides.length;$('#bar').style.width=((cur+1)/slides.length*100)+'%';
+  $$('#dots i').forEach((d,i)=>d.classList.toggle('on',i===cur));
+  $('#prev').disabled=cur===0;$('#next').disabled=cur===slides.length-1;
+  $('#prev').style.opacity=cur===0?.4:1;$('#next').style.opacity=cur===slides.length-1?.4:1;
+  if(push!==false&&location.hash!=='#'+(cur+1))history.replaceState(null,'','#'+(cur+1));
+}
+function go(n){show(n)}
+$('#prev').addEventListener('click',()=>go(cur-1));$('#next').addEventListener('click',()=>go(cur+1));
+document.addEventListener('keydown',e=>{if(e.target.matches('input[type=range]')&&(e.key==='ArrowLeft'||e.key==='ArrowRight'))return;
+  if(e.key==='ArrowRight'||e.key==='PageDown')go(cur+1);else if(e.key==='ArrowLeft'||e.key==='PageUp')go(cur-1);else if(e.key==='Home')go(0);else if(e.key==='End')go(slides.length-1)});
+let tx=null,ty=null;
+deck.addEventListener('touchstart',e=>{if(e.target.closest('input[type=range],.tablewrap'))return;tx=e.touches[0].clientX;ty=e.touches[0].clientY},{passive:true});
+deck.addEventListener('touchend',e=>{if(tx===null)return;const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;tx=null;if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.6)go(cur+(dx<0?1:-1))},{passive:true});
+window.addEventListener('hashchange',()=>{const n=parseInt(location.hash.slice(1),10);if(n&&n-1!==cur)show(n-1,false)});
+$('#thm').addEventListener('click',()=>{const r=document.documentElement,d=r.getAttribute('data-theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');r.setAttribute('data-theme',d==='dark'?'light':'dark')});
+/* printing: initialise every slide first */
+window.addEventListener('beforeprint',()=>slides.forEach(s=>{if(!s.ready){s.ready=true;if(s.init)s.init()}}));
+show(Math.max(0,(parseInt(location.hash.slice(1),10)||1)-1),false);
+window.__deck={CALC,go,slides};
+</script>
+</body>
+</html>
