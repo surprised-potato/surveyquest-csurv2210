@@ -983,10 +983,10 @@ party:[
   hint:'You are reading a stadia rod across the water.',sol:'It is very useful in smooth waters. The boat’s position comes from the staff intercept (horizontal distance) at the instant of sounding, and the direction from the horizontal angle at the instrument.'}
 ],
 gaging:[
- {id:'g1',type:'mcq',xp:10,q:'How is the cross-section of a stream treated in Lab 7?',
+ {id:'g1',type:'mcq',xp:10,q:'How is the cross-section of a stream treated in Lab 9?',
   opts:['As a series of trapezoids, with triangles at both end sections','As one rectangle','As a single triangle','As a circle'],a:0,
   hint:'The sounding depths are the parallel sides.',sol:'The cross-section is a series of trapezoids whose parallel sides are the observed depths and whose length is the distance between soundings. The two end sections are triangles, because the depth is zero at each water edge.'},
- {id:'g2',type:'fill',xp:20,q:M`Lab 7 data. Soundings from the right water edge (RWE): 10 m: 1.2 m, 15 m: 1.8 m, 20 m: 2.5 m, 25 m: 2.1 m, 30 m: 1.6 m, 35 m: 0.9 m, and the left water edge (LWE) at 40 m is 0 m. Find the partial areas of sections A (RWE to 10 m), B (10 to 15 m) and C (15 to 20 m).`,
+ {id:'g2',type:'fill',xp:20,q:M`Lab 9 sample data. Soundings from the right water edge (RWE): 10 m: 1.2 m, 15 m: 1.8 m, 20 m: 2.5 m, 25 m: 2.1 m, 30 m: 1.6 m, 35 m: 0.9 m, and the left water edge (LWE) at 40 m is 0 m. Find the partial areas of sections A (RWE to 10 m), B (10 to 15 m) and C (15 to 20 m).`,
   fields:[{k:'A_A (m²)',a:6,t:.01},{k:'A_B (m²)',a:7.5,t:.01},{k:'A_C (m²)',a:10.75,t:.01}],
   hint:M`$A = \tfrac{1}{2}\,l\,(d_1 + d_2)$. Section A is a triangle with depths 0 and 1.2 over 10 m.`,sol:M`$A_A = \tfrac{1}{2}(10)(1.2) = 6.00$. $A_B = \tfrac{1}{2}(5)(1.2 + 1.8) = 7.50$. $A_C = \tfrac{1}{2}(5)(1.8 + 2.5) = 10.75$ m².`},
  {id:'g3',type:'fill',xp:25,q:M`Same cross-section. Find the partial areas of sections D (20 to 25 m), E (25 to 30 m), F (30 to 35 m) and G (35 m to the LWE).`,
@@ -1006,8 +1006,8 @@ gaging:[
  {id:'g9',type:'num',xp:10,q:'A float is timed over a 30 m run of the stream and takes 20 s. What is its speed?',a:1.5,t:.005,unit:'m/s',
   hint:'Distance divided by time.',sol:M`$30/20 = 1.5$ m/s.`},
  {id:'g10',type:'mcq',xp:10,q:'A float on the surface of a stream is timed over a known distance. How does its speed compare with the mean velocity of the stream?',
-  opts:['It is faster than the mean, so a coefficient below 1 (commonly about 0.85) is applied','It is slower than the mean','It is always equal to the mean','It is zero at the surface'],a:0,
-  hint:'Water moves slowest at the bed.',sol:'Surface water moves faster than the average over the depth, so a surface-float velocity is reduced by a coefficient less than 1, commonly about 0.85. This point is standard textbook content: the lab sheet lists a float and a stopwatch but does not give a coefficient.'}
+  opts:['It is faster than the mean, so a coefficient below 1 (0.75 to 0.95, about 0.85 on average) is applied','It is slower than the mean','It is always equal to the mean','It is zero at the surface'],a:0,
+  hint:'Water moves slowest at the bed.',sol:'Surface water moves faster than the average over the depth, so a surface-float velocity is reduced by a coefficient from 0.75 to 0.95, depending on conditions, with 0.85 as an average value (Lab 8).'}
 ],
 boss:[
  {id:'k1',type:'mcq',xp:20,q:'<b>Identification.</b> What is the process of measuring the depth of a body of water at a particular point?',
@@ -1015,7 +1015,7 @@ boss:[
   hint:'It uses a pole, a lead line or a fathometer.',sol:'Sounding.'},
  {id:'k2',type:'num',xp:30,q:M`<b>Echo sounding.</b> The echo returns 0.08 s after the pulse. The speed of sound in the water is 1,500 m/s. How deep is the water?`,a:60,t:.05,unit:'m',
   hint:M`$h = \tfrac{1}{2}Vt$.`,sol:M`$\tfrac{1}{2}(1500)(0.08) = 60$ m.`},
- {id:'k3',type:'fill',xp:30,q:M`<b>Partial areas.</b> Lab 7 cross-section: soundings at 10, 15, 20, 25, 30 and 35 m from the RWE are 1.2, 1.8, 2.5, 2.1, 1.6 and 0.9 m, with 0 at the RWE and at the LWE (40 m). Find the areas of sections A, B and C.`,
+ {id:'k3',type:'fill',xp:30,q:M`<b>Partial areas.</b> Lab 9 sample cross-section: soundings at 10, 15, 20, 25, 30 and 35 m from the RWE are 1.2, 1.8, 2.5, 2.1, 1.6 and 0.9 m, with 0 at the RWE and at the LWE (40 m). Find the areas of sections A, B and C.`,
   fields:[{k:'A_A (m²)',a:6,t:.01},{k:'A_B (m²)',a:7.5,t:.01},{k:'A_C (m²)',a:10.75,t:.01}],
   hint:M`$A = \tfrac{1}{2}l(d_1 + d_2)$.`,sol:M`6.00, 7.50 and 10.75 m².`},
  {id:'k4',type:'fill',xp:40,q:M`<b>Total area.</b> For the same cross-section find the areas of D, E, F and G, then the total area.`,
@@ -1087,17 +1087,17 @@ SEC.gaging=M`
 </section>
 
 <section class="sec"><h2><span class="no">B</span>Velocity</h2>
-<div class="prose"><p>Lab 7 measures the velocity in each partial section with a float and a stopwatch: speed is the distance run divided by the time taken. A float on the surface moves faster than the stream’s average, so the textbook practice is to multiply by a coefficient less than 1 (commonly about 0.85). The lab sheet does not give a coefficient, so the numbers here use the velocities exactly as tabulated.</p></div>
+<div class="prose"><p>Lab 8 (stream velocity) finds the velocity with a float and a stopwatch: $v = L/t$, the length of the run divided by the time taken. A float on the surface moves faster than the stream’s average, so Lab 8 multiplies by a coefficient from 0.75 to 0.95, and 0.85 may be used as an average. Lab 9 then takes the velocity along each partial section. The numbers here use the velocities exactly as tabulated in the sample data.</p></div>
 </section>
 
-<section class="sec"><h2><span class="no">C</span>Lab 7: gage the stream</h2>
+<section class="sec"><h2><span class="no">C</span>Lab 9: gage the stream</h2>
 <div class="prose"><p>This is the cross-section from the lab sheet. Reduce one section at a time. Section C has two velocity readings, 1.8 and 2.0 m/s, and the lab uses their mean.</p></div>
 <div class="lab" id="lab-stream"></div>
 </section>
 `;
 SEC.boss=M`
 <section class="sec"><div class="prose"><p>Where the river fans into the bay, the water rises into a spirit that tangles every sounding line and sweeps the boats off their ranges. This is <b>The Undertow</b>. Each partial discharge you get right drains its strength.</p>
-<p>The problems follow Lab 7: an echo-sounding check, then the cross-section of the stream, section by section, up to the total discharge.</p></div></section>
+<p>The problems follow Lab 9: an echo-sounding check, then the cross-section of the stream, section by section, up to the total discharge.</p></div></section>
 `;
 
 const KEY='surveyquest-csurv2210-w4';
@@ -1137,7 +1137,7 @@ const STAGES=[
  {id:'hydro',short:'Terms',no:'4-1',title:'What Is Hydrography?',mission:'Learn the words of hydrographic surveying and the six basic operations of a survey.',labs:[],time:'20 min'},
  {id:'equip',short:'Equipment',no:'4-2',title:'Craft, Lines and Echoes',mission:'Know the sounding instruments and read a depth from the time of an echo.',labs:['echo'],time:'25 min'},
  {id:'party',short:'Party',no:'4-3',title:'The Party and the Positions',mission:'Crew the boat and choose how to fix where each sounding was taken.',labs:[],time:'25 min'},
- {id:'gaging',short:'Gaging',no:'4-4',title:'Gage the Stream',mission:'Turn soundings and velocities into the area and discharge of a stream, as in Lab 7.',labs:['stream'],time:'30 min'}
+ {id:'gaging',short:'Gaging',no:'4-4',title:'Gage the Stream',mission:'Turn soundings and velocities into the area and discharge of a stream, as in Lab 9.',labs:['stream'],time:'30 min'}
 ];
 
 /* ---------- Lab: echo sounder ---------- */
@@ -1167,7 +1167,7 @@ function labEcho(root){
   $$('input',root).forEach(n=>n.addEventListener('input',draw));draw();
 }
 
-/* ---------- Lab 7: stream gaging ---------- */
+/* ---------- Lab 9: stream gaging ---------- */
 const SG={x:[0,10,15,20,25,30,35,40],d:[0,1.2,1.8,2.5,2.1,1.6,0.9,0],v:[0.75,1.5,1.9,2.5,1.5,0.8,0],n:'ABCDEFG'};
 function sgRows(){
   let cum=0;return SG.n.split('').map((nm,i)=>{const l=SG.x[i+1]-SG.x[i],A=0.5*l*(SG.d[i]+SG.d[i+1]),q=A*SG.v[i];cum+=q;return {nm,l,d1:SG.d[i],d2:SG.d[i+1],A,v:SG.v[i],q,cum}});
@@ -1209,8 +1209,8 @@ const WORLD={n:4,name:'Delta Sound',course:'CSURV2210 · Higher Surveying',
  greet:'Know where every sounding was taken, and from which datum. A depth with no position is just a number.',
  mapTitle:'Cross the delta',
  how:['<b>Read a stage.</b> Short sections with the terms, instruments and formulas.','<b>Play the labs.</b> Time an echo and gage a whole stream, section by section.','<b>Clear the checkpoints.</b> First-try answers build your closed traverse and your rank.','<b>Beat the boss.</b> Seven problems that run from an echo to the discharge of the stream.'],
- foot:'Based on the CSURV2210 hydrographic surveying deck and lab manual exercise 7 (stream gaging). The deck has no stream-gaging slides, so the discharge work follows Lab 7. Section C of the lab sheet lists two velocities, 1.8 and 2.0 m/s, and the solutions use their mean. The float coefficient and the echo-sounding formula note are standard textbook points. The Teacher button shows answers and unlocks the boss for demos. Progress is saved in this browser only.',
- boss:{taunt:'Every line you drop, I will drag off its range. Try to measure me, and I will already have moved.',win:'The tide is slack and every sounding is in its place.',short:'Undertow',title:'The Undertow',eyebrow:'World 4 boss · Lab 7',mission:'Calm the river spirit by gaging the stream, section by section, up to its total discharge.',lockTitle:'The tide is running',lock:'enter the bay',unit:'currents calmed',defeat:['Tide slack!','World 4 complete']},
+ foot:'Based on the CSURV2210 hydrographic surveying deck and lab manual exercises 8 (stream velocity) and 9 (stream gaging). The deck has no stream-gaging slides, so the discharge work follows Lab 9. The 2025-2026 edition of the sheet leaves its data tables blank, so the soundings and velocities here are the sample data from the earlier edition. In that sample, section C lists two velocities, 1.8 and 2.0 m/s, and the solutions use their mean. The float coefficient comes from Lab 8; the echo-sounding formula note is a standard textbook point. The Teacher button shows answers and unlocks the boss for demos. Progress is saved in this browser only.',
+ boss:{taunt:'Every line you drop, I will drag off its range. Try to measure me, and I will already have moved.',win:'The tide is slack and every sounding is in its place.',short:'Undertow',title:'The Undertow',eyebrow:'World 4 boss · Lab 9',mission:'Calm the river spirit by gaging the stream, section by section, up to its total discharge.',lockTitle:'The tide is running',lock:'enter the bay',unit:'currents calmed',defeat:['Tide slack!','World 4 complete']},
  prev:{name:'Triangle Peaks',href:'SurveyQuest-World3.html'},next:{name:'Serpent Highway',href:'SurveyQuest-World5.html'},
  heroSVG:deltaSVG,bossSVG:undertowSVG,
  mapBg:'<rect x="0" y="120" width="900" height="110" fill="var(--c1)" opacity=".22"/><g fill="none" stroke="var(--c1)" stroke-width="1.6" opacity=".45"><path d="M0 150q40-10 80 0t80 0t80 0t80 0t80 0t80 0t80 0t80 0t80 0t80 0t80 0t80 0"/><path d="M0 190q40-10 80 0t80 0t80 0t80 0t80 0t80 0t80 0t80 0t80 0t80 0t80 0t80 0"/></g><polygon points="0,230 0,170 200,150 420,165 700,140 900,150 900,230" fill="var(--far)" opacity=".5"/>',

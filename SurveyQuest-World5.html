@@ -1064,13 +1064,13 @@ degree:[
   hint:'The first one after the PC is Sta. 2+260. The last before the PT is Sta. 2+400.',sol:M`Full stations are at 2+260, 2+280, 2+300, 2+320, 2+340, 2+360, 2+380 and 2+400: eight. The first sub-chord is 4.80 m (PC to 2+260) and the last is 15.20 m (2+400 to PT).`}
 ],
 stake:[
- {id:'s1',type:'order',xp:20,q:'Put the steps of laying out a curve by deflection angles in order (Lab 8).',
+ {id:'s1',type:'order',xp:20,q:'Put the steps of laying out a curve by deflection angles in order (Lab 10).',
   items:['Compute T, Lc, L, E, m, the stationing of the PC and PT, and the table of deflection angles and chords','Set up at the PI and measure T back and ahead to set the PC and PT','Move the instrument to the PC and sight the back tangent with the circle reading zero','Turn off the first deflection angle and measure the first chord from the PC','Lay off each next deflection angle and chord from the last stake','Close on the PT: the last deflection must be I/2 and the stake should fall on the PT'],perm:[3,0,5,1,4,2],
   hint:'Compute first, set the PC and PT next, close on the PT last.',sol:'Compute, set the PI and measure T to the PC and PT, move to the PC and zero on the back tangent, set the first station, repeat for the others, and finish at the PT. If the line of sight misses the PT stake, there is an error in the measurements or in the computation.'},
  {id:'s2',type:'mcq',xp:10,q:'The deflection angle at the PC to a point on the curve equals…',
   opts:['Half the central angle subtended by the arc from the PC to the point','The full central angle','One quarter of the arc length','The angle at the PI'],a:0,
   hint:'A tangent–chord angle is half its intercepted arc.',sol:'An angle between a tangent and a chord is measured by one half of the intercepted arc, while the central angle is measured by the whole arc. So the deflection angle is half the central angle, and the last one, to the PT, equals I/2.'},
- {id:'s3',type:'fill',xp:25,q:M`<b>The Lab 8 curve.</b> $R = 200$ m, $I = 36^\circ$, PI at Sta. 1+240.00. Find the tangent length $T$ and the length of the curve $L_c$.`,
+ {id:'s3',type:'fill',xp:25,q:M`<b>The Lab 10 curve.</b> $R = 200$ m, $I = 36^\circ$, PI at Sta. 1+240.00. Find the tangent length $T$ and the length of the curve $L_c$.`,
   fields:[{k:'T (m)',a:64.98,t:.02},{k:'Lc (m)',a:125.66,t:.02}],
   hint:M`$T = R\tan 18^\circ$ and $L_c = \pi R I/180^\circ$.`,sol:M`$T = 200\tan 18^\circ = 64.98$ m. $L_c = \pi(200)(36)/180 = 125.66$ m.`},
  {id:'s4',type:'fill',xp:20,q:M`Same curve. Find the stationing of the PC and PT as total chainage in metres.`,
@@ -1085,7 +1085,7 @@ stake:[
  {id:'s7',type:'fill',xp:30,q:M`Every full station adds the same deflection, $D/2$, and a half station adds $D/4$. For $R = 200$ m (SI, 1 station $= 20$ m) find $D/2$ and $D/4$.`,
   fields:[{k:'D/2 (° ′ ″)',a:dg(2,51,53),t:sx(3),dms:true},{k:'D/4 (° ′ ″)',a:dg(1,25,56),t:sx(3),dms:true}],
   hint:M`$D = 1145.916/R = 5.7296^\circ$.`,sol:M`$D = 5.7296^\circ$. $D/2 = 2.8648^\circ = 2^\circ 51' 53''$. $D/4 = 1.4324^\circ = 1^\circ 25' 56''$ for a 10 m half station.`},
- {id:'s8',type:'fill',xp:30,q:M`The closing checks of Lab 8. For this curve, what must the deflection angle from the PC to the <b>PT</b> be, and the deflection from the PC to the <b>midpoint</b> of the curve?`,
+ {id:'s8',type:'fill',xp:30,q:M`The closing checks of Lab 10. For this curve, what must the deflection angle from the PC to the <b>PT</b> be, and the deflection from the PC to the <b>midpoint</b> of the curve?`,
   fields:[{k:'To the PT (° ′ ″)',a:18,t:sx(1),dms:true},{k:'To the midpoint (° ′ ″)',a:9,t:sx(1),dms:true}],
   hint:M`The last deflection equals $I/2$. The midpoint is half-way along, so it is $I/4$.`,sol:M`To the PT: $I/2 = 18^\circ 00' 00''$. To the midpoint: $I/4 = 9^\circ 00' 00''$. If the stake you set at the PT is not on the line of sight, look for a mistake in the measuring or the computation.`},
  {id:'s9',type:'num',xp:25,q:M`The deflection to the last full station (Sta. 1+300) is $17^\circ 54' 09''$ and the deflection to the PT must be $18^\circ$. What deflection <b>increment</b> belongs to the last sub-chord (Sta. 1+300 to the PT)? Answer in decimal degrees.`,a:.0974,t:.001,unit:'°',
@@ -1162,7 +1162,7 @@ ${tbl(['Symbol','Meaning'],[['PC','Point of curvature: the beginning of the curv
 
 <section class="sec"><h2><span class="no">C</span>The formulas</h2>
 <div class="formula">$$T = R\tan\tfrac{I}{2} \qquad E = R\left(\sec\tfrac{I}{2} - 1\right) \qquad m = R\left(1 - \cos\tfrac{I}{2}\right)$$ $$L = 2R\sin\tfrac{I}{2} \qquad L_c = \dfrac{\pi R I}{180^\circ}$$<div class="fnote">Each comes from a right triangle O–PC–PI or O–Q–PC with the half angle $I/2$ at O.</div></div>
-<div class="callout trap"><span class="tag">Trap!</span><p>$L$ is the straight <b>long chord</b>, $L_c$ is the <b>arc</b>. The Lab 8 sheet swaps the labels: it writes $L = 100(I/D)$ for the curve and $L_c = 2R\sin\tfrac{I}{2}$ for the long chord. This world follows the lecture deck: <b>L is the chord and Lc the arc</b>.</p></div>
+<div class="callout trap"><span class="tag">Trap!</span><p>$L$ is the straight <b>long chord</b>, $L_c$ is the <b>arc</b>. The Lab 10 sheet swaps the labels: it writes $L = 100(I/D)$ for the curve and $L_c = 2R\sin\tfrac{I}{2}$ for the long chord. This world follows the lecture deck: <b>L is the chord and Lc the arc</b>.</p></div>
 <div class="prose"><p>Stationing is written in kilometres and metres: Sta. 4+360.2 means 4 km + 360.2 m = 4,360.2 m.</p></div>
 </section>
 `;
@@ -1187,22 +1187,22 @@ SEC.stake=M`
 <div class="callout trap"><span class="tag">Trap!</span><p>The first and last sub-chords are short, because the PC and PT are not on a full station. Compute them from the actual arc, not from 20 m.</p></div>
 </section>
 
-<section class="sec"><h2><span class="no">B</span>Lab 8: lay out the curve</h2>
+<section class="sec"><h2><span class="no">B</span>Lab 10: lay out the curve</h2>
 <div class="prose"><p>The curve is $R = 200$ m, $I = 36^\circ$, PI at Sta. 1+240.00. Stake the stations one at a time and watch the curve grow. The last stake must close on the PT.</p></div>
 <div class="lab" id="lab-stake"></div>
 </section>
 `;
 SEC.combo=M`
-<section class="sec"><h2><span class="no">A</span>Compound curves (Lab 9)</h2>
+<section class="sec"><h2><span class="no">A</span>Compound curves</h2>
 <div class="prose"><p>Two arcs meet at the <b>PCC</b>, the point of compound curvature, and bend the same way. The deck defines them but gives no formulas, so these are the standard ones from any surveying text. Extend the tangent at the PCC to meet the outer tangents. Each arc then has its own tangent length, $t_1 = R_1\tan\tfrac{I_1}{2}$ and $t_2 = R_2\tan\tfrac{I_2}{2}$, and the triangle with the PI gives, by the sine rule, the two long tangents.</p></div>
 <div class="formula">$$I = I_1 + I_2 \qquad T_1 = t_1 + \dfrac{(t_1 + t_2)\sin I_2}{\sin I} \qquad T_2 = t_2 + \dfrac{(t_1 + t_2)\sin I_1}{\sin I}$$</div>
-<div class="prose"><p><b>Lab 9 challenge.</b> A fence limits the forward tangent $T_2$ to 150 m. With $R_1 = 300$ m, $I_1 = 30^\circ$ and $I_2 = 40^\circ$ fixed, choose $R_2$ so that $T_2$ is within 0.5 m of 150 m.</p></div>
+<div class="prose"><p><b>Compound curve challenge.</b> A fence limits the forward tangent $T_2$ to 150 m. With $R_1 = 300$ m, $I_1 = 30^\circ$ and $I_2 = 40^\circ$ fixed, choose $R_2$ so that $T_2$ is within 0.5 m of 150 m.</p></div>
 <div class="lab" id="lab-compound"></div>
-<div class="callout trap"><span class="tag">Trap!</span><p>These compound-curve formulas are not in your deck, which only defines the curve. They are the standard textbook ones, and no lab sheet exists for Lab 9, so check them against your lecturer’s notes.</p></div>
+<div class="callout trap"><span class="tag">Trap!</span><p>These compound-curve formulas are not in your deck, which only defines the curve. They are the standard textbook ones, and no lab sheet exists for compound curves, so check them against your lecturer’s notes.</p></div>
 </section>
 
 <section class="sec"><h2><span class="no">B</span>The S-bend ahead</h2>
-<div class="callout chief"><span class="tag">Chief says</span><p>Look up the pass, past the last switchback. See where the road bends one way, then swings straight back the other way, like a snake changing its mind? That is a <b>reverse curve</b>, and the Whistling Gorge is full of them. The two arcs meet at a point where they share one tangent, with their centres on opposite sides of it. We will not survey it on this expedition. The crew that comes up the road after us will lay it out as Lab 10, and the compound curve you have just fitted to the fence is the best preparation for it: every reverse curve is built from the same simple curve you already know.</p></div>
+<div class="callout chief"><span class="tag">Chief says</span><p>Look up the pass, past the last switchback. See where the road bends one way, then swings straight back the other way, like a snake changing its mind? That is a <b>reverse curve</b>, and the Whistling Gorge is full of them. The two arcs meet at a point where they share one tangent, with their centres on opposite sides of it. We will not survey it on this expedition. The crew that comes up the road after us will lay it out on a later expedition, and the compound curve you have just fitted to the fence is the best preparation for it: every reverse curve is built from the same simple curve you already know.</p></div>
 <div class="prose"><p>For now you only need the idea from stage 5-1: <b>compound</b> arcs bend the same way, <b>reverse</b> arcs bend in opposite directions.</p></div>
 </section>
 `;
@@ -1248,8 +1248,8 @@ const STAGES=[
  {id:'route',short:'Routes',no:'5-1',title:'Route Surveys and Curves',mission:'Learn what a route survey is for and tell simple, compound and reverse curves apart.',labs:[],time:'15 min'},
  {id:'elements',short:'Elements',no:'5-2',title:'Anatomy of a Simple Curve',mission:'Name every element of a simple curve and compute T, E, m, L and Lc.',labs:[],time:'30 min'},
  {id:'degree',short:'Degree',no:'5-3',title:'Degree of Curve and Stationing',mission:'Use the degree of curve, solve the deck examples and station the PC and PT.',labs:[],time:'30 min'},
- {id:'stake',short:'Stake',no:'5-4',title:'Stake the Curve',mission:'Compute deflection angles and chords and lay out the curve of Lab 8.',labs:['stake'],time:'30 min'},
- {id:'combo',short:'Compound',no:'5-5',title:'Compound Curves',mission:'Join two arcs of different radii into a compound curve, as in Lab 9, and glimpse the reverse curve waiting up the pass.',labs:['compound'],time:'30 min'}
+ {id:'stake',short:'Stake',no:'5-4',title:'Stake the Curve',mission:'Compute deflection angles and chords and lay out the curve of Lab 10.',labs:['stake'],time:'30 min'},
+ {id:'combo',short:'Compound',no:'5-5',title:'Compound Curves',mission:'Join two arcs of different radii into a compound curve, and glimpse the reverse curve waiting up the pass.',labs:['compound'],time:'30 min'}
 ];
 
 /* ---------- geometry helpers for the curve labs ---------- */
@@ -1266,7 +1266,7 @@ function fit(pts,W,H,pad){const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]);const x0
   return {sx:x=>pad+(x-x0)*k,sy:y=>H-pad-(y-y0)*k,k}}
 const poly=(pts,f)=>pts.map(p=>`${f.sx(p[0]).toFixed(1)},${f.sy(p[1]).toFixed(1)}`).join(' ');
 
-/* ---------- Lab 8: stake the curve ---------- */
+/* ---------- Lab 10: stake the curve ---------- */
 const SK={R:200,I:36,PI:1240,st:[1180,1200,1220,1240,1260,1280,1300]};
 function skCalc(){const R=SK.R,I=SK.I,T=R*Math.tan(rad(I/2)),Lc=Math.PI*R*I/180,PC=SK.PI-T,PT=PC+Lc;
   const pts=SK.st.concat([PT]);let prev=PC;const rows=pts.map((sta,i)=>{const s=sta-PC,d=Math.round(s/R/2*180/Math.PI*3600)/3600,ch=2*R*Math.sin(Math.abs(sta-prev)/R/2);prev=sta;
@@ -1307,7 +1307,7 @@ function labStake(root){
   draw();
 }
 
-/* ---------- Lab 9: compound curve ---------- */
+/* ---------- compound curve (no lab sheet) ---------- */
 const CC={R1:300,I1:30,I2:40};
 function ccCalc(R2){const {R1,I1,I2}=CC,I=I1+I2,t1=R1*Math.tan(rad(I1/2)),t2=R2*Math.tan(rad(I2/2));
   const T1=t1+(t1+t2)*Math.sin(rad(I2))/Math.sin(rad(I)),T2=t2+(t1+t2)*Math.sin(rad(I1))/Math.sin(rad(I));
@@ -1344,8 +1344,8 @@ const WORLD={n:5,name:'Serpent Highway',course:'CSURV2210 · Higher Surveying',
  greet:'A curve is only as good as its closure. Compute first, then stake, then check the last deflection against half the central angle.',
  mapTitle:'Follow the winding road',
  how:['<b>Read a stage.</b> Short sections with the elements, formulas and deck examples.','<b>Play the labs.</b> Stake a curve station by station, fit a compound curve to a fence.','<b>Clear the checkpoints.</b> First-try answers build your closed traverse and your rank.','<b>Beat the boss.</b> Seven problems that follow one curve from its bearings to the closing check.'],
- foot:'Based on the CSURV2210 route surveying deck and simple-curves slides (including their Examples 1 to 5) and lab manual exercise 8. Example 6 depends on a figure that did not survive in the slides, so it is not used. Compound curve formulas and Lab 9 follow standard textbook methods: the deck defines these curves but gives no formulas and no lab sheet exists for them. Reverse curves (Lab 10) are only introduced by definition and left for a later expedition. The lab sheet’s L = 100(I/D) is the English-system form, so SI work here uses 20I/D. The Teacher button shows answers and unlocks the boss for demos. Progress is saved in this browser only.',
- boss:{taunt:'I bend every straight line I touch. Find my tangent, and I will find another kink.',win:'The road runs true again, and the last stake falls exactly on the PT. The final gap on the island map closes: your island is charted. Far to the east, beyond the last switchback, a storm is still gathering over the Earthworks Frontier. Nobody has to go there, but the Chief says that is where the old blunders hide.',short:'Kink',title:'Kink, the Broken Tangent',eyebrow:'World 5 boss · Lab 8',mission:'Straighten the road by computing one curve from its bearings to the closing check.',lockTitle:'The road is fogged in',lock:'reach the pass',unit:'kinks straightened',defeat:['Island charted!','World 5 complete · Certificate unlocked']},
+ foot:'Based on the CSURV2210 route surveying deck and simple-curves slides (including their Examples 1 to 5) and lab manual exercise 8. Example 6 depends on a figure that did not survive in the slides, so it is not used. Compound curve formulas follow standard textbook methods: the deck defines these curves but gives no formulas and no lab sheet exists for them. Reverse curves are only introduced by definition and left for a later expedition. The lab sheet’s L = 100(I/D) is the English-system form, so SI work here uses 20I/D. The Teacher button shows answers and unlocks the boss for demos. Progress is saved in this browser only.',
+ boss:{taunt:'I bend every straight line I touch. Find my tangent, and I will find another kink.',win:'The road runs true again, and the last stake falls exactly on the PT. The final gap on the island map closes: your island is charted. Far to the east, beyond the last switchback, a storm is still gathering over the Earthworks Frontier. Nobody has to go there, but the Chief says that is where the old blunders hide.',short:'Kink',title:'Kink, the Broken Tangent',eyebrow:'World 5 boss · Lab 10',mission:'Straighten the road by computing one curve from its bearings to the closing check.',lockTitle:'The road is fogged in',lock:'reach the pass',unit:'kinks straightened',defeat:['Island charted!','World 5 complete · Certificate unlocked']},
  prev:{name:'Delta Sound',href:'SurveyQuest-World4.html'},next:{name:'Earthworks Frontier · optional',href:'SurveyQuest-World6.html'},
  heroSVG:highwaySVG,bossSVG:kinkSVG,
  mapBg:'<polygon points="0,150 120,110 260,138 420,100 600,132 760,96 900,126 900,230 0,230" fill="var(--far)" opacity=".5"/><path d="M-10 215 C140 215 180 180 300 180 C460 180 440 135 600 135 C740 135 740 108 920 104" fill="none" stroke="var(--ink)" stroke-width="16" opacity=".16" stroke-linecap="round"/>',
